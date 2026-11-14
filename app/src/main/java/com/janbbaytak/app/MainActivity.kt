@@ -247,7 +247,7 @@ class MainActivity : ComponentActivity() {
         } else {
             Text("التصفح متاح بدون تسجيل. الحساب اختياري للعملاء وأصحاب الأنشطة.",color=Color.Gray)
             Field("رقم الهاتف بصيغة دولية مثل +201xxxxxxxxx",phone){phone=it}
-            Field("الرقم السري",password){password=it}
+            PasswordField("الرقم السري",password){password=it}
             Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick={creating=false}){Text("دخول")}
                 TextButton(onClick={creating=true}){Text("إنشاء حساب")}
@@ -282,6 +282,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable private fun PasswordField(label:String,value:String,onValue:(String)->Unit) {
+    OutlinedTextField(value=value,onValueChange=onValue,modifier=Modifier.fillMaxWidth(),singleLine=true,label={Text(label)},visualTransformation=androidx.compose.ui.text.input.PasswordVisualTransformation())
+}
 @Composable private fun Field(label:String,value:String,onValue:(String)->Unit) {
     Column(verticalArrangement=Arrangement.spacedBy(5.dp)) {
         Text(label,color=Ink,fontWeight=FontWeight.SemiBold,fontSize=13.sp)
