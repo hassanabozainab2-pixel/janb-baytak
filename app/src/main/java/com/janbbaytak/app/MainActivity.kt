@@ -102,17 +102,16 @@ class MainActivity : ComponentActivity() {
             override fun handleOnBackPressed() {
                 val script = """
                     (function(){
-                      const modals=['productModal','cartModal','adModal','businessModal','accountModal'];
-                      for(let id of modals){const e=document.getElementById(id);if(e&&e.classList.contains('show')){e.classList.remove('show');return true;}}
-                      const screens=['businessPage','ownerPage','adminPage','searchPage','categoryPage'];
-                      for(let id of screens){const e=document.getElementById(id);if(e&&e.classList.contains('show')){e.classList.remove('show');if(id==='businessPage')history.replaceState({},'',location.pathname);return true;}}
+                      if (typeof window.handleAppBack === 'function') return window.handleAppBack();
+                      const ids=['productModal','cartModal','adModal','loginModal','signupModal','businessPage','ownerPage','adminPage','searchPage','categoryPage','adDetailPage'];
+                      for (const id of ids) { const e=document.getElementById(id); if(e&&e.classList.contains('show')) { e.classList.remove('show'); return true; } }
+                      const store=document.getElementById('storePage'); if(store&&store.classList.contains('show')){store.classList.remove('show');return true;}
                       return false;
                     })();
                 """.trimIndent()
                 webView.evaluateJavascript(script) { result ->
-                    if (result != "true") {
-                        if (webView.canGoBack()) webView.goBack() else finish()
-                    }
+                    if (result != "true") finish()
+                }
                 }
             }
         })
