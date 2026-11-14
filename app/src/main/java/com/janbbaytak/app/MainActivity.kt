@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.webkit.*
 import android.widget.FrameLayout
+import org.json.JSONObject
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingAuthUri: Uri? = null
 
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
@@ -22,6 +24,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingAuthUri = intent?.data
         window.statusBarColor = Color.rgb(13, 89, 64)
         window.navigationBarColor = Color.rgb(13, 89, 64)
 
@@ -60,6 +63,10 @@ class MainActivity : ComponentActivity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                consumeAuthCallback()
+            }
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return false
                 val scheme = uri.scheme ?: return false
@@ -109,6 +116,26 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingAuthUri = intent.data
+        consumeAuthCallback()
+    }
+
+    private fun consumeAuthCallback() {
+        val uri = pendingAuthUri ?: return
+        if (uri.scheme != "janbbaytak" || uri.host != "auth" || uri.path != "/callback") return
+        val fragment = uri.fragment ?: return
+        val params = Uri.parse("https://callback.local/?$fragment")
+        val accessToken = params.getQueryParameter("access_token") ?: return
+        val refreshToken = params.getQueryParameter("refresh_token") ?: return
+        pendingAuthUri = null
+        val access = JSONObject.quote(accessToken)
+        val refresh = JSONObject.quote(refreshToken)
+        webView.evaluateJavascript("window.handleNativeAuthCallback && window.handleNativeAuthCallback($access,$refresh)", null)
     }
 
     private fun loadLatestInterface() {
