@@ -26,8 +26,20 @@ jobs:
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0"
       - name: Set unique app version for this build
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-          sed -i 's/versionCode = [0-9]*; versionName = "[^"]*"/versionCode = ${{ 1000 + github.run_number }}; versionName = "2.2.${{ github.run_number }}"/' app/build.gradle.kts
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+          path = Path("app/build.gradle.kts")
+          source = path.read_text()
+          run = int(os.environ["GITHUB_RUN_NUMBER"])
+          updated = re.sub(r'versionCode = \\d+; versionName = "[^"]+"', f'versionCode = {1000 + run}; versionName = "2.2.{run}"', source, count=1)
+          if updated == source:
+              raise SystemExit("Could not update Android version")
+          path.write_text(updated)
+          PY
       - name: Build debug APK
         run: gradle assembleDebug
       - name: Prepare private signing key
