@@ -6,6 +6,7 @@ create table if not exists public.product_image_library (
  is_active boolean not null default true, created_by uuid references auth.users(id) on delete set null,
  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
+create unique index if not exists product_image_library_unique_name_category_idx on public.product_image_library(category_name,name);
 create index if not exists product_image_library_category_idx on public.product_image_library(category_name);
 create index if not exists product_image_library_name_idx on public.product_image_library using gin(to_tsvector('simple',name||' '||aliases));
 alter table public.product_image_library enable row level security;
@@ -164,7 +165,7 @@ insert into public.product_image_library(name,category_name,category_icon,aliase
 ('طوب','مواد بناء وتشطيبات','🧱','طوب أحمر'),
 ('معجون','مواد بناء وتشطيبات','🧱',''),
 ('مواسير','مواد بناء وتشطيبات','🧱','مواسير مياه')
-on conflict do nothing;
+on conflict (category_name,name) do nothing;
 create or replace function public.janb_normalize_search(p_text text) returns text language sql immutable parallel safe as $$
  select regexp_replace(translate(lower(coalesce(p_text,'')), 'أإآٱىةؤئ', 'اااايهوي'), '[ًٌٍَُِّْـ]', '', 'g');
 $$;
