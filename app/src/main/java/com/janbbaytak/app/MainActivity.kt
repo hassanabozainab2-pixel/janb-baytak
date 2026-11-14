@@ -141,7 +141,7 @@ class MainActivity : ComponentActivity() {
             var html: String? = null
             try {
                 val url = java.net.URL(
-                    "https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/admin-dashboard-safe-20261115/web/index.html"
+                    "https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/index.html"
                 )
                 val connection = url.openConnection()
                 connection.connectTimeout = 15000
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 if (!html.isNullOrBlank() && html!!.contains("id=\"appShell\"")) {
                     webView.loadDataWithBaseURL(
-                        "https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/admin-dashboard-safe-20261115/web/",
+                        "https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/",
                         html!!,
                         "text/html",
                         "UTF-8",
