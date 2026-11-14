@@ -3,6 +3,7 @@
  <application android:allowBackup="false" android:label="جنب بيتك" android:supportsRtl="true" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar">
   <activity android:name=".MainActivity" android:exported="true">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+   <intent-filter android:autoVerify="false"><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="janbbaytak" android:host="auth" android:path="/callback"/></intent-filter>
   </activity>
  </application>
 </manifest>
