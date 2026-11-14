@@ -173,7 +173,7 @@ create or replace function public.janb_global_search(search_text text,result_lim
 returns table(result_type text,id uuid,title text,description text,business_id uuid,business_name text,category_name text,image_url text,price numeric,discount_percent numeric,relevance integer)
 language sql stable set search_path=public as $$
 with q as (select public.janb_normalize_search(trim(search_text)) term),
-terms as (select regexp_split_to_table(term,'\\s+') term from q where term<>''),
+terms as (select regexp_split_to_table(term,'\s+') term from q where term<>''),
 all_rows as (
  select 'business'::text typ,b.id,b.name title,b.description,b.id business_id,b.name business_name,c.name category_name,b.logo_url image_url,null::numeric price,null::numeric discount_percent,concat_ws(' ',b.name,b.description,b.address,b.city,b.phone,c.name) haystack
  from businesses b left join categories c on c.id=b.category_id where b.status='approved' and b.is_active=true
