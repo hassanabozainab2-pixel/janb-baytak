@@ -176,7 +176,7 @@ $('loginOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');open
 $('signupOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('signupModal')};
 $('goSignupBtn').onclick=()=>{closeModal('loginModal');openModal('signupModal')};
 $('goLoginBtn').onclick=()=>{closeModal('signupModal');openModal('loginModal')};
-const AUTH_EMAIL_REDIRECT='https://hassanabozainab2-pixel.github.io/janb-baytak/';
+const AUTH_EMAIL_REDIRECT='https://cdn.jsdelivr.net/gh/hassanabozainab2-pixel/janb-baytak@main/web/index.html';
 async function handleAuthSubmit(e,mode){
  e.preventDefault();
  const prefix=mode==='signup'?'signup':'login',email=$(prefix+'Email').value.trim().toLowerCase(),password=$(prefix+'Password').value,message=$(prefix+'Message'),submit=$(prefix+'Submit'),resend=$(prefix+'ResendBtn');
