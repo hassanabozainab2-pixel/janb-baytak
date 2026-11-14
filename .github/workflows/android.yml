@@ -35,7 +35,7 @@ jobs:
           path = Path("app/build.gradle.kts")
           source = path.read_text()
           run = int(os.environ["GITHUB_RUN_NUMBER"])
-          updated = re.sub(r'versionCode = \\d+; versionName = "[^"]+"', f'versionCode = {1000 + run}; versionName = "2.2.{run}"', source, count=1)
+          updated = re.sub(r'versionCode = [0-9]+; versionName = "[^"]+"', f'versionCode = {1000 + run}; versionName = "2.2.{run}"', source, count=1)
           if updated == source:
               raise SystemExit("Could not update Android version")
           path.write_text(updated)
