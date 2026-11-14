@@ -6,7 +6,7 @@ plugins {
 android {
  namespace = "com.janbbaytak.app"
  compileSdk = 35
- defaultConfig { applicationId = "com.janbbaytak.app"; minSdk = 24; targetSdk = 35; versionCode = 3; versionName = "2.1.0" }
+ defaultConfig { applicationId = "com.janbbaytak.app"; minSdk = 24; targetSdk = 35; versionCode = 4; versionName = "2.2.0" }
  signingConfigs {
   create("release") {
    val ks = System.getenv("ANDROID_KEYSTORE_PATH")
