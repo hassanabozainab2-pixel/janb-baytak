@@ -112,7 +112,6 @@ class MainActivity : ComponentActivity() {
                 webView.evaluateJavascript(script) { result ->
                     if (result != "true") finish()
                 }
-                }
             }
         })
     }
