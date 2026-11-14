@@ -25,6 +25,9 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+      - name: Set unique app version for this build
+        run: |
+          sed -i 's/versionCode = [0-9]*; versionName = "[^"]*"/versionCode = ${{ 1000 + github.run_number }}; versionName = "2.2.${{ github.run_number }}"/' app/build.gradle.kts
       - name: Build debug APK
         run: gradle assembleDebug
       - name: Prepare private signing key
