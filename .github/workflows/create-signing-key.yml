@@ -1,0 +1,38 @@
+name: Create Android signing key (one-time)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  create-signing-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a permanent release keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing-material
+          STORE_PASS="$(openssl rand -hex 24)"
+          KEY_PASS="$(openssl rand -hex 24)"
+          KEY_ALIAS="janbbaytak"
+          keytool -genkeypair -v \
+            -keystore signing-material/janb-baytak-release.jks \
+            -storepass "$STORE_PASS" \
+            -keypass "$KEY_PASS" \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Janb Baytak, OU=Android, O=Janb Baytak, L=Isna, ST=Luxor, C=EG"
+          base64 -w 0 signing-material/janb-baytak-release.jks > signing-material/ANDROID_KEYSTORE_BASE64.txt
+          cat > signing-material/credentials.txt <<EOF
+ANDROID_KEYSTORE_PASSWORD=$STORE_PASS
+ANDROID_KEY_ALIAS=$KEY_ALIAS
+ANDROID_KEY_PASSWORD=$KEY_PASS
+EOF
+          chmod 600 signing-material/*
+      - name: Upload private signing material
+        uses: actions/upload-artifact@v4
+        with:
+          name: janb-baytak-private-signing-material
+          path: signing-material/
+          retention-days: 1
+          if-no-files-found: error
