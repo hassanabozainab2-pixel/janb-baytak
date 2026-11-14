@@ -1,0 +1,50 @@
+name: Create encrypted Android signing bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths: [".github/workflows/create-signing-key.yml"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  create-signing-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate signing key and encrypt export
+        shell: bash
+        env:
+          EXPORT_PASSWORD: ${{ secrets.SIGNING_EXPORT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPORT_PASSWORD}" ]; then
+            echo "SIGNING_EXPORT_PASSWORD secret is missing."
+            exit 1
+          fi
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+          mkdir -p signing-material
+          STORE_PASS="$(openssl rand -hex 24)"
+          KEY_PASS="$(openssl rand -hex 24)"
+          KEY_ALIAS="janbbaytak"
+          keytool -genkeypair -noprompt \
+            -keystore signing-material/janb-baytak-release.jks \
+            -storepass "$STORE_PASS" \
+            -keypass "$KEY_PASS" \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Janb Baytak, OU=Android, O=Janb Baytak, L=Isna, ST=Luxor, C=EG"
+          base64 -w 0 signing-material/janb-baytak-release.jks > signing-material/ANDROID_KEYSTORE_BASE64.txt
+          printf 'ANDROID_KEYSTORE_PASSWORD=%s\nANDROID_KEY_ALIAS=%s\nANDROID_KEY_PASSWORD=%s\n' "$STORE_PASS" "$KEY_ALIAS" "$KEY_PASS" > signing-material/credentials.txt
+          7z a -t7z -mhe=on -p"$EXPORT_PASSWORD" signing-material.7z ./signing-material/*
+          test -s signing-material.7z
+      - name: Upload encrypted bundle only
+        uses: actions/upload-artifact@v4
+        with:
+          name: janb-baytak-encrypted-signing-bundle
+          path: signing-material.7z
+          retention-days: 1
+          if-no-files-found: error
