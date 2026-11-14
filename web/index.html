@@ -271,7 +271,7 @@ async function openAdminPage(){
  const us=$('adminProfileSearch');if(us)us.oninput=()=>{const q=us.value.trim().toLowerCase();document.querySelectorAll('#adminProfileRows [data-profile-search]').forEach(el=>el.style.display=el.dataset.profileSearch.includes(q)?'':'none')};
  $('adminCategoryForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),name=String(f.get('name')).trim(),slug='section-'+Date.now();const {error}=await sb.from('categories').insert({name,slug,icon:f.get('icon')||'📌',sort_order:Number(f.get('sort_order')||10),is_active:true});if(error)return alert('تعذر إضافة القسم: '+error.message);alert('تمت إضافة القسم.');await openAdminPage();await loadAll()};
 }
-async function adminToggleContent(table,id,isActive){
+async async function adminToggleContent(table,id,isActive){
  const allowed=['products','services','offers'];if(!allowed.includes(table))return alert('نوع المحتوى غير مسموح.');
  const {error}=await sb.from(table).update({is_active:isActive}).eq('id',id);
  if(error)return alert('تعذر تحديث الحالة: '+error.message);
