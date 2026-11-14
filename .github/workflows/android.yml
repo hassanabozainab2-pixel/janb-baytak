@@ -2,7 +2,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "admin-dashboard-safe-20261115" ]
 permissions:
   contents: read
 jobs:
