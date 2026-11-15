@@ -107,6 +107,7 @@ class MainActivity : ComponentActivity() {
         setContentView(webView)
         setupFirebaseMessaging()
         loadLatestInterface()
+        checkForAppUpdate()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -175,6 +176,49 @@ class MainActivity : ComponentActivity() {
         val access = JSONObject.quote(accessToken)
         val refresh = JSONObject.quote(refreshToken)
         webView.evaluateJavascript("window.handleNativeAuthCallback && window.handleNativeAuthCallback($access,$refresh)", null)
+    }
+
+    private fun checkForAppUpdate() {
+        Thread {
+            try {
+                val url = java.net.URL("https://api.github.com/repos/hassanabozainab2-pixel/janb-baytak/releases/latest")
+                val connection = url.openConnection()
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                connection.setRequestProperty("Accept", "application/vnd.github+json")
+                connection.setRequestProperty("User-Agent", "JanbBaytak-Android")
+                val json = JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
+                val latestTag = json.optString("tag_name")
+                val assets = json.optJSONArray("assets") ?: return@Thread
+                var apkUrl: String? = null
+                for (i in 0 until assets.length()) {
+                    val asset = assets.optJSONObject(i) ?: continue
+                    if (asset.optString("name") == "janb-baytak.apk") {
+                        apkUrl = asset.optString("browser_download_url")
+                        break
+                    }
+                }
+                val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
+                if (latestTag.isNotBlank() && latestTag.removePrefix("v") != currentVersion && !apkUrl.isNullOrBlank()) {
+                    runOnUiThread {
+                        android.app.AlertDialog.Builder(this)
+                            .setTitle("تحديث جديد لجنب بيتك")
+                            .setMessage("في إصدار أحدث من التطبيق. تحب تنزّله دلوقتي؟")
+                            .setPositiveButton("تنزيل التحديث") { _, _ ->
+                                try {
+                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl)))
+                                } catch (_: Exception) {
+                                    android.widget.Toast.makeText(this, "تعذر فتح رابط التحديث", android.widget.Toast.LENGTH_LONG).show()
+                                }
+                            }
+                            .setNegativeButton("لاحقًا", null)
+                            .show()
+                    }
+                }
+            } catch (_: Exception) {
+                // Keep the app usable when the update service or internet is unavailable.
+            }
+        }.start()
     }
 
     private fun loadLatestInterface() {
