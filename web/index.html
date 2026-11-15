@@ -113,6 +113,16 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 .bottom-cart-btn span{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:20px;background:#e2b64f;color:#30250b;font-size:12px}
 body{padding-bottom:72px}
 .account-dismiss-layer{position:fixed;inset:0;z-index:40;background:transparent;display:none}.account-dismiss-layer.active{display:block}.account-menu{position:relative;z-index:42}
+
+/* Real Esna market hero banner */
+.home-hero{position:relative;isolation:isolate;overflow:hidden;height:clamp(165px,48vw,245px);margin:16px 0 12px;border:2px solid #e2b64f;border-radius:22px;background:#174d38;box-shadow:0 8px 22px #052d1d55}
+.home-hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%}
+.home-hero:after{content:"";position:absolute;inset:25% 0 0;background:linear-gradient(180deg,transparent 0%,#062f20cc 100%);z-index:1}
+.home-hero-copy{position:absolute;z-index:2;right:16px;left:16px;bottom:13px;color:#fff;text-align:right;text-shadow:0 2px 5px #0009}
+.home-hero-copy strong{display:block;font-size:clamp(23px,6vw,34px);font-weight:950;line-height:1.25}
+.home-hero-copy span{display:inline-block;margin-top:5px;padding:4px 10px;border-radius:20px;background:#e2b64f;color:#26351e;font-size:12px;font-weight:900;text-shadow:none}
+@media(min-width:560px){.home-hero{height:245px}}
+
 </style>
 </head>
 <body>
@@ -121,6 +131,7 @@ body{padding-bottom:72px}
  <div class="top"><div class="brand-area"><div><div class="brand">جنب بيتك</div><div class="tag">كل اللي بتحلم بيه في جنب بيتك هتلاقيه</div></div></div>
   <div class="top-actions"><div class="account-menu"><button class="account-toggle" id="accountToggle" type="button">حسابك ▾</button><div class="account-dropdown hidden" id="accountDropdown"><div id="accountState" class="smallnote">تصفح براحتك، وسجّل فقط لإضافة أو إدارة نشاطك.</div><div class="rowbtn"><button type="button" id="loginOpenBtn" onclick="document.getElementById('accountDropdown').classList.add('hidden');document.getElementById('loginModal').classList.add('show')">تسجيل الدخول</button><button type="button" id="signupOpenBtn" onclick="document.getElementById('accountDropdown').classList.add('hidden');document.getElementById('signupModal').classList.add('show')">إنشاء حساب جديد</button><button id="ownerOpenBtn" class="hidden">إدارة نشاطي</button><button id="adminOpenBtn" class="hidden">لوحة الإدارة</button><button id="logoutBtn" class="hidden">تسجيل خروج</button></div></div></div><button class="fab" id="addBtn" type="button">＋ أضف نشاطك</button><button type="button" class="featured-request-btn" id="featuredRequestBtn">⭐ إعلان مميز</button></div>
  </div>
+ <section class="home-hero" aria-label="سوق إسنا"><img src="https://d1ldvf68ux039x.cloudfront.net/thumbs/photos/2202/7062973/1000w_q95.jpg" alt="سوق القيسرية في إسنا بمحافظة الأقصر" loading="eager" referrerpolicy="no-referrer"><div class="home-hero-copy"><strong>جنب بيتك</strong><span>محلات · خدمات · فرص أقرب لك</span></div></section>
  <div class="pill" id="connectionStatus" style="display:inline-block;margin-top:12px">إسنا · جاري الاتصال</div>
  <div class="refresh-row"><button class="refresh-btn" id="refreshAppBtn">↻ تحديث التطبيق</button><span class="refresh-status" id="refreshStatus">تحديث الأنشطة والمنتجات والعروض</span></div>
  <div class="search"><input id="q" placeholder="بتدور على إيه؟ محل، منتج، خدمة..." aria-label="بحث"><button id="searchBtn">بحث</button></div>
