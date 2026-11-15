@@ -1,9 +1,12 @@
 package com.janbbaytak.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.view.View
 import android.webkit.*
 import android.widget.FrameLayout
@@ -11,6 +14,7 @@ import org.json.JSONObject
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
@@ -20,6 +24,10 @@ class MainActivity : ComponentActivity() {
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
         filePathCallback = null
+    }
+
+    private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) notifyWebViewPushReady()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +42,7 @@ class MainActivity : ComponentActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT
         )
         webView.setBackgroundColor(Color.rgb(246, 248, 246))
+        webView.addJavascriptInterface(NativePushBridge(), "JanbNativePush")
         webView.visibility = View.VISIBLE
 
         webView.settings.apply {
@@ -96,6 +105,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContentView(webView)
+        setupFirebaseMessaging()
         loadLatestInterface()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -114,6 +124,37 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    private inner class NativePushBridge {
+        @JavascriptInterface
+        fun getFcmToken(): String = getSharedPreferences("janb_push", MODE_PRIVATE).getString("fcm_token", "") ?: ""
+
+        @JavascriptInterface
+        fun notificationsAllowed(): Boolean = Build.VERSION.SDK_INT < 33 ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun setupFirebaseMessaging() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            val prefs = getSharedPreferences("janb_push", MODE_PRIVATE)
+            if (!prefs.getBoolean("notification_permission_asked", false)) {
+                prefs.edit().putBoolean("notification_permission_asked", true).apply()
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                getSharedPreferences("janb_push", MODE_PRIVATE).edit().putString("fcm_token", task.result).apply()
+                notifyWebViewPushReady()
+            }
+        }
+    }
+
+    private fun notifyWebViewPushReady() {
+        if (!::webView.isInitialized) return
+        webView.post { webView.evaluateJavascript("window.syncNativePushToken && window.syncNativePushToken()", null) }
     }
 
     override fun onNewIntent(intent: Intent) {
