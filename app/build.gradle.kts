@@ -34,6 +34,7 @@ dependencies {
  implementation(platform("com.google.firebase:firebase-bom:35.2.0"))
  implementation("com.google.firebase:firebase-messaging")
  implementation("androidx.activity:activity-compose:1.10.0")
+ implementation("androidx.fragment:fragment-ktx:1.8.5")
  implementation("androidx.compose.ui:ui")
  implementation("androidx.compose.ui:ui-graphics")
  implementation("androidx.compose.ui:ui-tooling-preview")
