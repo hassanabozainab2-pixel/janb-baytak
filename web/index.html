@@ -162,7 +162,16 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 <script>
 const SUPABASE_URL='https://ijmeliyhdilfkveotadr.supabase.co';
 const SUPABASE_KEY='sb_publishable_LGDX79mgcJIY58ioMTUf9Q_Lgea0b2z';
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+if(!window.supabase||typeof window.supabase.createClient!=='function'){
+ document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('connectionStatus');if(s)s.textContent='تعذر تحميل مكتبة الاتصال';const a=document.getElementById('featuredAds');if(a)a.innerHTML='<div class="empty">تعذر تحميل مكتبة الاتصال. تحقق من الإنترنت ثم أعد المحاولة.</div>';const b=document.getElementById('latestBusinesses');if(b)b.innerHTML='<div class="empty">تعذر تحميل مكتبة الاتصال.</div>';});
+ throw new Error('Supabase JavaScript SDK failed to load');
+}
+const janbFetchWithTimeout=(input,init={})=>{
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),18000);
+ if(init.signal){if(init.signal.aborted)controller.abort();else init.signal.addEventListener('abort',()=>controller.abort(),{once:true});}
+ return fetch(input,{...init,signal:controller.signal}).finally(()=>clearTimeout(timer));
+};
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:janbFetchWithTimeout},realtime:{logger:(kind,msg,data)=>console.debug('[Janb Realtime]',kind,msg,data)}});
 const CATS=[
  {slug:'transport',name:'المواصلات',icon:'🚕'},{slug:'shops-trade',name:'المحلات والتجارة',icon:'🏪'},
  {slug:'restaurants',name:'المطاعم',icon:'🍽️'},{slug:'public-services',name:'الخدمات العامة',icon:'🧰'},
@@ -192,7 +201,7 @@ async function loadAll(){
   categories=catRes.data||[];businesses=bRes.data||[];products=pRes.data||[];services=sRes.data||[];offers=oRes.data||[];
   $('connectionStatus').textContent='متصل بالسحابة';renderHome();fillCategorySelect();await loadFeaturedAds();
   const id=new URLSearchParams(location.search).get('business');if(id)openBusinessPage(id);
- }catch(e){$('connectionStatus').textContent='تعذر الاتصال';$('latestBusinesses').innerHTML='<div class="empty">تعذر تحميل البيانات: '+esc(e.message)+'</div>';console.error(e)}
+ }catch(e){$('connectionStatus').textContent='تعذر تحميل بيانات السحابة';$('latestBusinesses').innerHTML='<div class="empty">تعذر تحميل البيانات: '+esc(e.message||'انتهت مهلة الاتصال')+'</div>';$('businessCount').textContent='تعذر التحميل';console.error('Janb loadAll failed:',e);await loadFeaturedAds();}
 }
 function renderHome(){
  $('businessCount').textContent=businesses.length+' نشاط';
@@ -383,9 +392,10 @@ function startJanbCloudSync(){
     .on('postgres_changes',{event:'*',schema:'public',table:'ads'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'business_images'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'product_image_library'},scheduleJanbCloudRefresh)
-    .subscribe(status=>{
+    .subscribe((status,err)=>{
+      console.info('Janb realtime status:',status,err||'');
       if(status==='SUBSCRIBED'){$('connectionStatus').textContent='متصل بالسحابة · تحديث مباشر';}
-      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){$('connectionStatus').textContent='السحابة متاحة · إعادة الاتصال بالتحديث التلقائي';}
+      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){$('connectionStatus').textContent='السحابة متاحة · التحديث الدوري يعمل';}
     });
   }catch(e){console.warn('Janb realtime unavailable; polling remains enabled',e);}
  }
@@ -395,6 +405,6 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-(async()=>{await refreshAuth();await refreshCloudData(true);startJanbCloudSync()})();
+startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.error('Janb auth restore failed:',e);const a=$('accountState');if(a)a.textContent='تعذر التحقق من جلسة الدخول؛ يمكنك تصفح التطبيق وإعادة المحاولة.';});
 </script>
 </body></html>
