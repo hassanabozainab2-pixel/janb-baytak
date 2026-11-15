@@ -21,7 +21,7 @@ if (!window.supabase) {
 :root{--green:#126b4d;--green2:#e8f4ee;--gold:#e2b64f;--ink:#17231e;--muted:#6b7771;--line:#e6ebe8;--bg:#f6f8f6}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif}
 header{background:linear-gradient(135deg,#0d5940,#16835d);color:white;padding:22px 18px 26px;border-radius:0 0 25px 25px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand-area{display:flex;align-items:center;gap:12px;min-width:0}.account-menu{position:relative;flex-shrink:0}.account-toggle{border:1px solid #ffffff88;background:#ffffff18;color:white;border-radius:20px;padding:8px 12px;font:inherit;font-size:12px;font-weight:750;white-space:nowrap}.account-dropdown{position:absolute;top:calc(100% + 10px);left:0;width:min(290px,82vw);z-index:10;background:white;color:var(--ink);border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 8px 24px #0003}.account-dropdown .rowbtn{margin-top:10px}.account-dropdown .rowbtn button{font-size:12px}.account-dropdown .rowbtn{display:grid;grid-template-columns:1fr;gap:8px}.account-dropdown .rowbtn button{width:100%;text-align:center}.social-login{border:0;border-radius:11px;padding:11px 12px;font:inherit;font-size:13px;font-weight:850;cursor:pointer}brand{font-size:25px;font-weight:850}.tag{font-size:13px;opacity:.9;margin-top:3px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand-area{display:flex;align-items:center;gap:12px;min-width:0}.account-menu{position:relative;flex-shrink:0;z-index:42}.account-toggle{border:1px solid #ffffff88;background:#ffffff18;color:white;border-radius:20px;padding:8px 12px;font:inherit;font-size:12px;font-weight:750;white-space:nowrap}.account-dropdown{position:absolute;top:calc(100% + 10px);left:0;width:min(290px,82vw);z-index:10;background:white;color:var(--ink);border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 8px 24px #0003}.account-dropdown .rowbtn{margin-top:10px}.account-dropdown .rowbtn button{font-size:12px}.account-dropdown .rowbtn{display:grid;grid-template-columns:1fr;gap:8px}.account-dropdown .rowbtn button{width:100%;text-align:center}.social-login{border:0;border-radius:11px;padding:11px 12px;font:inherit;font-size:13px;font-weight:850;cursor:pointer}brand{font-size:25px;font-weight:850}.tag{font-size:13px;opacity:.9;margin-top:3px}
 .pill{border:1px solid #ffffff55;border-radius:30px;padding:7px 11px;font-size:12px}
 .search{margin-top:19px;display:flex;gap:8px}.search input{flex:1;min-width:0;border:0;border-radius:13px;padding:14px;font-size:15px;outline:none}.search button{border:0;border-radius:13px;background:var(--gold);color:#2c2617;font-weight:800;padding:0 16px}
 main{max-width:760px;margin:auto;padding:17px 15px 90px}.section-head{display:flex;align-items:center;justify-content:space-between;margin:20px 2px 12px}.section-head h2{font-size:18px;margin:0}.muted{color:var(--muted);font-size:12px}
@@ -112,6 +112,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 .bottom-cart-btn{position:fixed;left:14px;right:14px;bottom:12px;z-index:30;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 18px;border:0;border-radius:16px;background:linear-gradient(135deg,#0d5940,#16835d);color:#fff;font:inherit;font-size:15px;font-weight:900;box-shadow:0 5px 20px #0003}
 .bottom-cart-btn span{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:20px;background:#e2b64f;color:#30250b;font-size:12px}
 body{padding-bottom:72px}
+.account-dismiss-layer{position:fixed;inset:0;z-index:40;background:transparent;display:none}.account-dismiss-layer.active{display:block}.account-menu{position:relative;z-index:42}
 </style>
 </head>
 <body>
@@ -246,14 +247,22 @@ async function adminDeleteLibraryImage(id){if(!confirm('حذف الصورة من
 function setupAdminTabs(){const host=$('adminContent'),panels=[...host.querySelectorAll(':scope > .panel')];const labels=['ملخص','طلبات الاشتراك','الأنشطة','الأقسام','الإعلانات','المنتجات','الخدمات','العروض','حسابات أصحاب الأنشطة','مكتبة الصور'];const nav=document.createElement('div');nav.className='owner-tabs admin-tabs';const items=[];panels.forEach((panel,i)=>{const section=document.createElement('section');section.dataset.adminPanel=String(i);panel.replaceWith(section);section.appendChild(panel);items.push(section)});const visibleLabels=labels.slice(0,items.length);nav.innerHTML=visibleLabels.map((label,i)=>'<button type="button" data-admin-tab="'+i+'">'+label+'</button>').join('');host.insertBefore(nav,host.firstChild);const select=i=>{const target=Number.isFinite(Number(i))?Math.max(0,Math.min(items.length-1,Number(i))):0;items.forEach((p,n)=>p.hidden=n!==target);nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',Number(b.dataset.adminTab)===target))};nav.querySelectorAll('button').forEach(b=>b.onclick=()=>select(b.dataset.adminTab));select(0);window.adminTab=name=>{const map={overview:0,payments:1,businesses:2,categories:3,ads:4,products:5,services:6,offers:7,accounts:8,library:9};select(Object.prototype.hasOwnProperty.call(map,name)?map[name]:name)}}
 async function loadFeaturedAds(){const box=$('featuredAds');try{const {data,error}=await janbWaitFor(sb.from('ads').select('id,slot,title,description,image_url,media_path,media_type,phone,whatsapp').eq('status','active').eq('is_active',true).order('slot'),'الإعلانات',12000);if(error)throw error;const rows=data||[];box.innerHTML='';for(let i=1;i<=3;i++){const ad=rows.find(x=>x.slot===i)||rows[i-1];const el=document.createElement('article');el.className='ad-card';if(ad){const url=ad.media_path?sb.storage.from('janb-media').getPublicUrl(ad.media_path).data.publicUrl:ad.image_url;const media=ad.media_type==='video'?'<video src="'+esc(url)+'" muted playsinline></video>':'<img src="'+esc(url)+'" alt="'+esc(ad.title)+'">';el.innerHTML=media+'<div style="flex:1"><span class="ad-slot">إعلان مميز · '+i+'</span><h3>'+esc(ad.title)+'</h3><div class="muted">'+esc(ad.description||'')+'</div></div>';el.onclick=()=>openFeaturedAd(ad,url)}else{el.innerHTML='<div class="product-placeholder">⭐</div><div style="flex:1"><span class="ad-slot">المساحة '+i+'</span><h3>لا يوجد إعلان حاليًا</h3><div class="muted">سيظهر الإعلان المميز هنا عند إضافته</div></div>'}box.appendChild(el)}}catch(e){box.innerHTML='<div class="empty">تعذر تحميل الإعلانات: '+esc(e.message||'مشكلة اتصال')+'</div>';console.error('Janb ads load failed:',e)}}
 $('featuredRequestBtn').onclick=openAdForm;
-function closeAccountDropdown(){const menu=$('accountDropdown');if(menu)menu.classList.add('hidden')}
-function handleAccountOutsideInteraction(event){
- const menu=document.querySelector('.account-menu');
- if(menu&&!menu.contains(event.target))closeAccountDropdown();
+const accountDismissLayer=document.createElement('div');
+accountDismissLayer.className='account-dismiss-layer';
+accountDismissLayer.setAttribute('aria-hidden','true');
+document.body.appendChild(accountDismissLayer);
+function closeAccountDropdown(){
+ const menu=$('accountDropdown');
+ if(menu)menu.classList.add('hidden');
+ accountDismissLayer.classList.remove('active');
 }
-// Capture phase ensures other page handlers cannot prevent the menu from closing.
-document.addEventListener('pointerdown',handleAccountOutsideInteraction,true);
-document.addEventListener('click',handleAccountOutsideInteraction,true);
+function openAccountDropdown(){
+ const menu=$('accountDropdown');
+ if(menu)menu.classList.remove('hidden');
+ accountDismissLayer.classList.add('active');
+}
+accountDismissLayer.addEventListener('pointerdown',function(event){event.preventDefault();closeAccountDropdown()});
+accountDismissLayer.addEventListener('click',closeAccountDropdown);
 document.addEventListener('keydown',function(event){if(event.key==='Escape')closeAccountDropdown()});
 
 function openFeaturedAd(ad,url){const body=$('adDetailBody');const media=ad.media_type==='video'?'<video class="detail-video" src="'+esc(url)+'" controls playsinline></video>':'<img class="detail-hero" src="'+esc(url)+'" alt="'+esc(ad.title)+'">';const contacts=phoneLinks(ad.phone,ad.whatsapp);body.innerHTML=media+'<div class="detail-card"><span class="pill-tag">إعلان مميز</span><h1 class="detail-title">'+esc(ad.title)+'</h1><p class="detail-description">'+esc(ad.description||'')+'</p>'+(contacts?'<div class="detail-contact">'+contacts+'</div>':'')+'</div>';showScreen('adDetailPage')}
@@ -280,7 +289,7 @@ function sendOrderWhatsApp(businessId){const items=cart.filter(x=>x.business_id=
 
 /* بيانات عرض تجريبي محلية؛ لا تُحفظ في جداول المحلات أو المنتجات الحقيقية */
 updateCartCount();
-$('accountToggle').onclick=()=>$('accountDropdown').classList.toggle('hidden');
+$('accountToggle').onclick=()=>{$('accountDropdown').classList.contains('hidden')?openAccountDropdown():closeAccountDropdown()};
 $('loginOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('loginModal')};
 $('signupOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('signupModal')};
 $('goSignupBtn').onclick=()=>{closeModal('loginModal');openModal('signupModal')};
