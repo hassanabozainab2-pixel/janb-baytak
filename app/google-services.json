@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "304429669668",
+    "project_id": "janb-baytak",
+    "storage_bucket": "janb-baytak.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304429669668:android:29b526548c525f61fce7b1",
+        "android_client_info": {
+          "package_name": "com.janbbaytak.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbtOiW6x-kLAcT5EZ3VVzIyJe5q4UeNH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
