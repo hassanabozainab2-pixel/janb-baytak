@@ -5,6 +5,18 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#126b4d"><meta name="description" content="جنب بيتك — المحلات والمنتجات والخدمات في مكان واحد"><title>جنب بيتك</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
+<script>
+/* CDN recovery: keep the app interactive if the pinned Supabase CDN is unavailable. */
+if (!window.supabase) {
+  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\\/script>');
+}
+</script>
+<script>
+/* Second independent CDN route for restrictive mobile networks. */
+if (!window.supabase) {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\\/script>');
+}
+</script>
 <style>
 :root{--green:#126b4d;--green2:#e8f4ee;--gold:#e2b64f;--ink:#17231e;--muted:#6b7771;--line:#e6ebe8;--bg:#f6f8f6}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif}
