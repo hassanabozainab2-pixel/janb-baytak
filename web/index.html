@@ -110,7 +110,8 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 </header>
 <main>
  <section id="featuredSection"><div class="section-head featured-head"><h2>⭐ إعلانات مميزة</h2></div><div class="muted" style="margin:-5px 2px 11px">مساحات لعرض المحلات والعروض المميزة</div><div id="featuredAds" class="cards"><div class="empty">جاري تحميل الإعلانات...</div></div></section>
- <button class="demo-entry" type="button" onclick="openDemoAppliancePage()"><span><strong>🧪 جرّب معرض الأجهزة الكهربائية</strong><small>عرض تجريبي للصور والمنتجات — لا يظهر ضمن المحلات الحقيقية</small></span><span class="demo-entry-icon">📺</span></button>\n <div class="section-head"><h2>دور على اللي محتاجه</h2><span class="muted">اختار القسم</span></div>
+ <button class="demo-entry" type="button" onclick="openDemoAppliancePage()"><span><strong>🧪 جرّب معرض الأجهزة الكهربائية</strong><small>عرض تجريبي للصور والمنتجات — لا يظهر ضمن المحلات الحقيقية</small></span><span class="demo-entry-icon">📺</span></button>
+ <div class="section-head"><h2>دور على اللي محتاجه</h2><span class="muted">اختار القسم</span></div>
  <div class="categories" id="categories">
   <button class="cat" data-slug="transport"><span>🚕</span>المواصلات</button>
   <button class="cat" data-slug="shops-trade"><span>🏪</span>المحلات والتجارة</button>
@@ -137,7 +138,8 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
   <div class="demo-credit">مصادر الصور: Wikimedia Commons. افتح «مصدر الصورة» أسفل كل منتج لمراجعة صاحب الصورة وشروط الترخيص.</div>
  </div>
 </section>
-\n<section class="screen" id="categoryPage"><div class="screen-top"><button onclick="closeScreen('categoryPage')">← رجوع</button><div><div class="screen-title" id="categoryTitle">القسم</div><div class="store-sub">قائمة الأنشطة داخل القسم</div></div></div><div class="screen-body"><div id="categoryListings" class="cards"></div></div></section>
+
+<section class="screen" id="categoryPage"><div class="screen-top"><button onclick="closeScreen('categoryPage')">← رجوع</button><div><div class="screen-title" id="categoryTitle">القسم</div><div class="store-sub">قائمة الأنشطة داخل القسم</div></div></div><div class="screen-body"><div id="categoryListings" class="cards"></div></div></section>
 <section class="screen" id="searchPage"><div class="screen-top"><button onclick="closeScreen('searchPage')">← رجوع</button><div class="screen-title">نتائج البحث</div></div><div class="screen-body"><div id="searchResults"></div></div></section>
 <section class="screen" id="adDetailPage"><div class="screen-top"><button onclick="closeScreen('adDetailPage')">← رجوع</button><div class="screen-title">تفاصيل الإعلان</div></div><div class="screen-body" id="adDetailBody"></div></section>
 <section class="screen" id="businessPage"><div class="screen-top"><button onclick="closeBusinessPage()">← رجوع</button><div><div class="screen-title" id="businessPageTitle">صفحة النشاط</div><div class="store-sub">تفاصيل النشاط ومنتجاته وخدماته</div></div><button style="margin-right:auto" id="shareBusinessBtn">مشاركة</button></div><div class="screen-body" id="businessPageBody"></div></section>
