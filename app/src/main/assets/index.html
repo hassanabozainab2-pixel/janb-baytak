@@ -122,7 +122,6 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:14px}
 </header>
 <main>
  <section id="featuredSection"><div class="section-head featured-head"><h2>⭐ إعلانات مميزة</h2></div><div class="muted" style="margin:-5px 2px 11px">مساحات لعرض المحلات والعروض المميزة</div><div id="featuredAds" class="cards"><div class="empty">جاري تحميل الإعلانات...</div></div></section>
- <button class="demo-entry" type="button" onclick="openDemoAppliancePage()"><span><strong>🧪 جرّب معرض الأجهزة الكهربائية</strong><small>عرض تجريبي للصور والمنتجات — لا يظهر ضمن المحلات الحقيقية</small></span><span class="demo-entry-icon">📺</span></button>
  <div class="section-head"><h2>دور على اللي محتاجه</h2><span class="muted">اختار القسم</span></div>
  <div class="categories" id="categories">
   <button class="cat" data-slug="transport"><span>🚕</span>المواصلات</button>
@@ -249,21 +248,6 @@ function sendOrderWhatsApp(){if(!cart.length)return;const phone=normPhone(active
 
 
 /* بيانات عرض تجريبي محلية؛ لا تُحفظ في جداول المحلات أو المنتجات الحقيقية */
-const demoApplianceItems=[
- {name:'ثلاجة منزلية',kind:'ثلاجات',credit:'BehBeh · ملكية عامة',file:'Refrigerator.jpg',source:'https://commons.wikimedia.org/wiki/File:Refrigerator.jpg'},
- {name:'غسالة ملابس',kind:'غسالات',credit:'Study · ملكية عامة',file:'WashingMachine.jpg',source:'https://commons.wikimedia.org/wiki/File:WashingMachine.jpg'},
- {name:'بوتاجاز',kind:'أفران وبوتاجازات',credit:'Taoheedah · CC BY-SA 4.0',file:'Gas_cooker.jpg',source:'https://commons.wikimedia.org/wiki/File:Gas_cooker.jpg'},
- {name:'شاشة تلفزيون',kind:'شاشات',credit:'EvanProdromou · CC BY-SA 4.0',file:'A_flat-screen_television.jpg',source:'https://commons.wikimedia.org/wiki/File:A_flat-screen_television.jpg'},
- {name:'مروحة كهربائية',kind:'مراوح',credit:'Garonzi Stefania · CC BY-SA 4.0',file:'Electric_fan.jpg',source:'https://commons.wikimedia.org/wiki/File:Electric_fan.jpg'},
- {name:'تكييف هواء',kind:'تكييفات',credit:'Mark Wagner · ملكية عامة',file:'Single-room_AC_unit-internal.jpg',source:'https://commons.wikimedia.org/wiki/File:Single-room_AC_unit-internal.jpg'},
- {name:'ميكروويف',kind:'أجهزة مطبخ',credit:'Tvcccp · CC BY-SA 4.0',file:'Refrigerator_and_microwave.jpg',source:'https://commons.wikimedia.org/wiki/File:Refrigerator_and_microwave.jpg'}
-];
-function openDemoAppliancePage(){
- const grid=$('demoApplianceGrid');
- grid.innerHTML=demoApplianceItems.map((p,i)=>'<article class="demo-product"><img loading="lazy" src="https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(p.file)+'" alt="'+esc(p.name)+'" onerror="this.onerror=null;this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=\\\'product-placeholder\\\'>📷 الصورة غير متاحة</div>\')"><h3>'+esc(p.name)+'</h3><p>'+esc(p.kind)+' · صورة للمعاينة</p><p>'+esc(p.credit)+'</p><a href="'+esc(p.source)+'" target="_blank" rel="noopener">مصدر الصورة والترخيص ↗</a></article>').join('');
- showScreen('demoAppliancePage');
-}
-
 $('accountToggle').onclick=()=>$('accountDropdown').classList.toggle('hidden');
 $('loginOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('loginModal')};
 $('signupOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('signupModal')};
