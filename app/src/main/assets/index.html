@@ -8,13 +8,13 @@
 <script>
 /* CDN recovery: keep the app interactive if the pinned Supabase CDN is unavailable. */
 if (!window.supabase) {
-  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\\/script>');
+  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\/script>');
 }
 </script>
 <script>
 /* Second independent CDN route for restrictive mobile networks. */
 if (!window.supabase) {
-  document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\\/script>');
+  document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\/script>');
 }
 </script>
 <style>
