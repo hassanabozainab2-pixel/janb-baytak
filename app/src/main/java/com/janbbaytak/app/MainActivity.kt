@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 if (!html.isNullOrBlank() && html!!.contains("id=\"appShell\"")) {
                     webView.loadDataWithBaseURL(
-                        "https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/",
+                        "https://raw.githack.com/hassanabozainab2-pixel/janb-baytak/main/web/",
                         html!!,
                         "text/html",
                         "UTF-8",
