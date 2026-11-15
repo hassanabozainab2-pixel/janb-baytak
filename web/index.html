@@ -247,10 +247,13 @@ function setupAdminTabs(){const host=$('adminContent'),panels=[...host.querySele
 async function loadFeaturedAds(){const box=$('featuredAds');try{const {data,error}=await janbWaitFor(sb.from('ads').select('id,slot,title,description,image_url,media_path,media_type,phone,whatsapp').eq('status','active').eq('is_active',true).order('slot'),'الإعلانات',12000);if(error)throw error;const rows=data||[];box.innerHTML='';for(let i=1;i<=3;i++){const ad=rows.find(x=>x.slot===i)||rows[i-1];const el=document.createElement('article');el.className='ad-card';if(ad){const url=ad.media_path?sb.storage.from('janb-media').getPublicUrl(ad.media_path).data.publicUrl:ad.image_url;const media=ad.media_type==='video'?'<video src="'+esc(url)+'" muted playsinline></video>':'<img src="'+esc(url)+'" alt="'+esc(ad.title)+'">';el.innerHTML=media+'<div style="flex:1"><span class="ad-slot">إعلان مميز · '+i+'</span><h3>'+esc(ad.title)+'</h3><div class="muted">'+esc(ad.description||'')+'</div></div>';el.onclick=()=>openFeaturedAd(ad,url)}else{el.innerHTML='<div class="product-placeholder">⭐</div><div style="flex:1"><span class="ad-slot">المساحة '+i+'</span><h3>لا يوجد إعلان حاليًا</h3><div class="muted">سيظهر الإعلان المميز هنا عند إضافته</div></div>'}box.appendChild(el)}}catch(e){box.innerHTML='<div class="empty">تعذر تحميل الإعلانات: '+esc(e.message||'مشكلة اتصال')+'</div>';console.error('Janb ads load failed:',e)}}
 $('featuredRequestBtn').onclick=openAdForm;
 function closeAccountDropdown(){const menu=$('accountDropdown');if(menu)menu.classList.add('hidden')}
-document.addEventListener('click',function(event){
+function handleAccountOutsideInteraction(event){
  const menu=document.querySelector('.account-menu');
  if(menu&&!menu.contains(event.target))closeAccountDropdown();
-});
+}
+// Capture phase ensures other page handlers cannot prevent the menu from closing.
+document.addEventListener('pointerdown',handleAccountOutsideInteraction,true);
+document.addEventListener('click',handleAccountOutsideInteraction,true);
 document.addEventListener('keydown',function(event){if(event.key==='Escape')closeAccountDropdown()});
 
 function openFeaturedAd(ad,url){const body=$('adDetailBody');const media=ad.media_type==='video'?'<video class="detail-video" src="'+esc(url)+'" controls playsinline></video>':'<img class="detail-hero" src="'+esc(url)+'" alt="'+esc(ad.title)+'">';const contacts=phoneLinks(ad.phone,ad.whatsapp);body.innerHTML=media+'<div class="detail-card"><span class="pill-tag">إعلان مميز</span><h1 class="detail-title">'+esc(ad.title)+'</h1><p class="detail-description">'+esc(ad.description||'')+'</p>'+(contacts?'<div class="detail-contact">'+contacts+'</div>':'')+'</div>';showScreen('adDetailPage')}
