@@ -263,7 +263,8 @@ function openDemoAppliancePage(){
  grid.innerHTML=demoApplianceItems.map((p,i)=>'<article class="demo-product"><img loading="lazy" src="https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(p.file)+'" alt="'+esc(p.name)+'" onerror="this.onerror=null;this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<div class=\\\'product-placeholder\\\'>📷 الصورة غير متاحة</div>\')"><h3>'+esc(p.name)+'</h3><p>'+esc(p.kind)+' · صورة للمعاينة</p><p>'+esc(p.credit)+'</p><a href="'+esc(p.source)+'" target="_blank" rel="noopener">مصدر الصورة والترخيص ↗</a></article>').join('');
  showScreen('demoAppliancePage');
 }
-\n$('accountToggle').onclick=()=>$('accountDropdown').classList.toggle('hidden');
+
+$('accountToggle').onclick=()=>$('accountDropdown').classList.toggle('hidden');
 $('loginOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('loginModal')};
 $('signupOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('signupModal')};
 $('goSignupBtn').onclick=()=>{closeModal('loginModal');openModal('signupModal')};
