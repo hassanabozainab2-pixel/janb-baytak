@@ -360,7 +360,41 @@ function openAdminBusiness(id){showScreen('ownerPage');$('ownerBusinessList').in
 async function toggleAdminCategory(id,isActive){const {error}=await sb.from('categories').update({is_active:isActive}).eq('id',id);if(error)alert('تعذر تحديث القسم: '+error.message);else{await openAdminPage();await loadAll()}}
 async function reviewBusiness(id,status){if(status==='approved'){const paid=await sb.from('subscription_payment_requests').select('id').eq('business_id',id).eq('status','approved').limit(1);if(paid.error)return alert(paid.error.message);if(!paid.data?.length)return alert('لا يمكن اعتماد النشاط قبل مراجعة الدفع واعتماد اشتراك مدفوع.')}const {error}=await sb.from('businesses').update({status}).eq('id',id);if(error)alert('تعذر تحديث النشاط: '+error.message);else{alert('تم تحديث حالة النشاط.');await openAdminPage();await loadAll()}}
 async function reviewAd(id,status){if(status==='active'){const check=await sb.from('ads').select('payment_status').eq('id',id).single();if(check.error)return alert(check.error.message);if(check.data.payment_status!=='approved')return alert('لا يمكن تفعيل الإعلان قبل مراجعة وتحقيق مبلغ 200 جنيه.')}const now=new Date(),end=new Date(now.getTime()+7*86400000);const {error}=await sb.from('ads').update({status,is_active:status==='active',starts_at:status==='active'?now.toISOString():null,ends_at:status==='active'?end.toISOString():null}).eq('id',id);if(error)alert('تعذر تحديث الإعلان: '+error.message);else{alert('تم تحديث حالة الإعلان.');await openAdminPage();await loadFeaturedAds()}}
-$('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';await loadAll();$('refreshStatus').textContent='تم تحديث البيانات';$('refreshAppBtn').disabled=false};
-(async()=>{await refreshAuth();await loadAll()})();
+let janbCloudBusy=false,janbCloudTimer=null,janbRealtimeChannel=null,janbPollTimer=null;
+async function refreshCloudData(quiet=false){
+ if(janbCloudBusy||!navigator.onLine)return;
+ janbCloudBusy=true;
+ try{await loadAll();if(!quiet&&$('refreshStatus'))$('refreshStatus').textContent='تم تحديث البيانات من السحابة';}
+ finally{janbCloudBusy=false;}
+}
+function scheduleJanbCloudRefresh(){
+ if(janbCloudTimer)clearTimeout(janbCloudTimer);
+ janbCloudTimer=setTimeout(()=>refreshCloudData(true),500);
+}
+function startJanbCloudSync(){
+ if(typeof sb.channel==='function'&&!janbRealtimeChannel){
+  try{
+   janbRealtimeChannel=sb.channel('janb-live-cloud-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'categories'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'businesses'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'products'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'services'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'offers'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ads'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'business_images'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'product_image_library'},scheduleJanbCloudRefresh)
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED'){$('connectionStatus').textContent='متصل بالسحابة · تحديث مباشر';}
+      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){$('connectionStatus').textContent='السحابة متاحة · إعادة الاتصال بالتحديث التلقائي';}
+    });
+  }catch(e){console.warn('Janb realtime unavailable; polling remains enabled',e);}
+ }
+ if(!janbPollTimer)janbPollTimer=setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine)refreshCloudData(true)},60000);
+ window.addEventListener('online',()=>refreshCloudData(true));
+ window.addEventListener('focus',()=>refreshCloudData(true));
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
+}
+$('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
+(async()=>{await refreshAuth();await refreshCloudData(true);startJanbCloudSync()})();
 </script>
 </body></html>
