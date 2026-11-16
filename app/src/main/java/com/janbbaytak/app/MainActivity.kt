@@ -119,7 +119,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContentView(webView)
-        registerReceiver(updateDownloadReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
+        val updateFilter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(updateDownloadReceiver, updateFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(updateDownloadReceiver, updateFilter)
+        }
         setupFirebaseMessaging()
         loadLatestInterface()
         checkForAppUpdate()
