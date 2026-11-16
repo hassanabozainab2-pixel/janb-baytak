@@ -139,14 +139,7 @@ body{padding-bottom:72px}
 <main>
  <section id="featuredSection"><div class="section-head featured-head"><h2>⭐ إعلانات مميزة</h2></div><div class="muted" style="margin:-5px 2px 11px">مساحات لعرض المحلات والعروض المميزة</div><div id="featuredAds" class="cards"><div class="empty">جاري تحميل الإعلانات...</div></div></section>
  <div class="section-head"><h2>دور على اللي محتاجه</h2><span class="muted">اختار القسم</span></div>
- <div class="categories" id="categories">
-  <button class="cat" data-slug="transport"><span>🚕</span>المواصلات</button>
-  <button class="cat" data-slug="shops-trade"><span>🏪</span>المحلات والتجارة</button>
-  <button class="cat" data-slug="restaurants"><span>🍽️</span>المطاعم</button>
-  <button class="cat" data-slug="public-services"><span>🧰</span>الخدمات العامة</button>
-  <button class="cat" data-slug="craftsmen"><span>🔧</span>الصنايعية والحرفيون</button>
-  <button class="cat" data-slug="pharmacies"><span>💊</span>الصيدليات</button>
- </div>
+ <div class="categories" id="categories"><div class="empty">جاري تحميل الأقسام...</div></div>
  <div class="section-head"><h2>أحدث الأنشطة</h2><span class="muted" id="businessCount">0 نشاط</span></div>
  <div class="cards" id="latestBusinesses"><div class="empty">جاري تحميل الأنشطة...</div></div>
  <div class="section-head"><h2>أحدث المنتجات</h2><span class="muted">من المحلات المسجلة</span></div>
@@ -159,6 +152,7 @@ body{padding-bottom:72px}
 
 
 
+<section class="screen" id="doctorsPage"><div class="screen-top"><button onclick="closeScreen('doctorsPage')">← رجوع</button><div><div class="screen-title">دليل أطباء إسنا</div><div class="store-sub">اختار التخصص لعرض الأطباء المسجلين</div></div></div><div class="screen-body"><div id="doctorSpecialties" class="categories"><div class="empty">جاري تحميل التخصصات...</div></div><div id="doctorResults" class="cards" style="margin-top:14px"></div></div></section>
 <section class="screen" id="categoryPage"><div class="screen-top"><button onclick="closeScreen('categoryPage')">← رجوع</button><div><div class="screen-title" id="categoryTitle">القسم</div><div class="store-sub">قائمة الأنشطة داخل القسم</div></div></div><div class="screen-body"><div id="categoryListings" class="cards"></div></div></section>
 <section class="screen" id="searchPage"><div class="screen-top"><button onclick="closeScreen('searchPage')">← رجوع</button><div class="screen-title">نتائج البحث</div></div><div class="screen-body"><div id="searchResults"></div></div></section>
 <section class="screen" id="adDetailPage"><div class="screen-top"><button onclick="closeScreen('adDetailPage')">← رجوع</button><div class="screen-title">تفاصيل الإعلان</div></div><div class="screen-body" id="adDetailBody"></div></section>
@@ -215,7 +209,7 @@ async function loadAll(){
  $('featuredAds').innerHTML='<div class="empty">بنحمّل الإعلانات من السحابة...</div>';
  try{
   const [catRes,bRes,pRes,sRes,oRes]=await Promise.all([
-   sb.from('categories').select('id,name,slug,icon,sort_order').eq('is_active',true).order('sort_order'),
+   sb.from('categories').select('id,name,slug,icon,sort_order,parent_id,is_active').eq('is_active',true).order('sort_order'),
    sb.from('businesses').select('id,owner_id,category_id,name,slug,description,address,city,phone,whatsapp,logo_url,cover_url,status,is_featured,created_at,categories(name,slug,icon)').eq('status','approved').eq('is_active',true).order('is_featured',{ascending:false}).order('created_at',{ascending:false}),
    sb.from('products').select('id,business_id,name,description,price,currency,image_url,created_at,businesses(name,phone,whatsapp,address,city)').eq('is_active',true).order('created_at',{ascending:false}),
    sb.from('services').select('id,business_id,name,description,price,price_note,created_at,businesses(name,phone,whatsapp,address,city)').eq('is_active',true).order('created_at',{ascending:false}),
@@ -230,12 +224,51 @@ async function loadAll(){
 }
 function renderHome(){
  $('businessCount').textContent=businesses.length+' نشاط';
+ const roots=categories.filter(c=>!c.parent_id).sort((a,b)=>a.sort_order-b.sort_order);
+ $('categories').innerHTML=roots.map(c=>'<button class="cat" data-slug="'+esc(c.slug)+'"><span>'+(c.icon||'📌')+'</span>'+esc(c.name)+'</button>').join('');
  $('latestBusinesses').innerHTML=businesses.length?businesses.slice(0,8).map(businessCard).join(''):'<div class="empty">لسه مفيش أنشطة منشورة في الأقسام. أضف نشاطك وابدأ.</div>';
  $('latestProducts').innerHTML=products.length?products.slice(0,6).map(p=>productRow(p,true)).join(''):'<div class="empty">المنتجات هتظهر هنا بعد ما أصحاب المحلات يضيفوها.</div>';
 }
-function fillCategorySelect(){const sel=$('businessCategory');if(!sel)return;sel.innerHTML=categories.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('')}
+function fillCategorySelect(){const sel=$('businessCategory');if(!sel)return;const leaves=categories.filter(c=>c.parent_id);sel.innerHTML=leaves.map(c=>'<option value="'+c.id+'">'+esc((categories.find(p=>p.id===c.parent_id)?.name||'')+' — '+c.name)+'</option>').join('')}
 $('categories').addEventListener('click',e=>{const btn=e.target.closest('[data-slug]');if(btn)openCategory(btn.dataset.slug)});
-function openCategory(slug){const c=categories.find(x=>x.slug===slug)||CATS.find(x=>x.slug===slug);$('categoryTitle').textContent=c?.name||'القسم';const rows=businesses.filter(b=>b.category_id===c?.id);$('categoryListings').innerHTML=rows.length?rows.map(businessCard).join(''):'<div class="empty">لا توجد أنشطة منشورة في القسم ده حاليًا.</div>';showScreen('categoryPage')}
+function openCategory(slug){
+ const c=categories.find(x=>x.slug===slug);
+ if(!c)return;
+ if(slug==='doctors-clinics'){openDoctorsDirectory();return}
+ const children=categories.filter(x=>x.parent_id===c.id).sort((a,b)=>a.sort_order-b.sort_order);
+ $('categoryTitle').textContent=c.name;
+ if(children.length){
+  $('categoryListings').innerHTML='<div class="categories">'+children.map(x=>'<button class="cat" data-child-category="'+x.id+'"><span>'+(x.icon||'📌')+'</span>'+esc(x.name)+'</button>').join('')+'</div>';
+  $('categoryListings').querySelectorAll('[data-child-category]').forEach(btn=>btn.addEventListener('click',()=>openSubcategory(btn.dataset.childCategory)));
+ }else{
+  const rows=businesses.filter(b=>b.category_id===c.id);
+  $('categoryListings').innerHTML=rows.length?rows.map(businessCard).join(''):'<div class="empty">لا توجد أنشطة منشورة في القسم ده حاليًا.</div>';
+ }
+ showScreen('categoryPage')
+}
+function openSubcategory(id){
+ const c=categories.find(x=>x.id===id);if(!c)return;
+ $('categoryTitle').textContent=c.name;
+ const rows=businesses.filter(b=>b.category_id===id);
+ $('categoryListings').innerHTML=rows.length?rows.map(businessCard).join(''):'<div class="empty">لا توجد أنشطة مسجلة في تصنيف '+esc(c.name)+' حاليًا.</div>';
+}
+async function openDoctorsDirectory(){
+ showScreen('doctorsPage');
+ $('doctorResults').innerHTML='';
+ $('doctorSpecialties').innerHTML='<div class="empty">جاري تحميل تخصصات أطباء إسنا...</div>';
+ const {data,error}=await sb.from('doctor_specialties').select('id,name,slug,icon,sort_order').eq('is_active',true).order('sort_order');
+ if(error){$('doctorSpecialties').innerHTML='<div class="empty">تعذر تحميل التخصصات حاليًا.</div>';return}
+ const rows=data||[];
+ $('doctorSpecialties').innerHTML=rows.map(x=>'<button class="cat" data-specialty="'+x.id+'"><span>'+(x.icon||'🩺')+'</span>'+esc(x.name)+'</button>').join('');
+ $('doctorSpecialties').querySelectorAll('[data-specialty]').forEach(btn=>btn.addEventListener('click',()=>loadDoctorsBySpecialty(btn.dataset.specialty,rows.find(x=>x.id===btn.dataset.specialty)?.name||'التخصص')));
+}
+async function loadDoctorsBySpecialty(id,name){
+ $('doctorResults').innerHTML='<div class="empty">جاري تحميل أطباء '+esc(name)+'...</div>';
+ const {data,error}=await sb.from('doctors').select('id,name,clinic_name,address,city,phone,whatsapp,working_hours,notes').eq('specialty_id',id).eq('is_active',true).eq('city','إسنا').order('name');
+ if(error){$('doctorResults').innerHTML='<div class="empty">تعذر تحميل الأطباء حاليًا.</div>';return}
+ const rows=data||[];
+ $('doctorResults').innerHTML='<h3 style="grid-column:1/-1">أطباء '+esc(name)+' في إسنا ('+rows.length+')</h3>'+(rows.map(d=>'<article class="listing"><div class="avatar">🩺</div><div style="min-width:0;flex:1"><h3>'+esc(d.name)+'</h3><p>'+esc(d.clinic_name||'عيادة')+' · '+esc([d.address,d.city].filter(Boolean).join(' - '))+'</p>'+(d.working_hours?'<p>🕒 '+esc(d.working_hours)+'</p>':'')+(d.notes?'<p>'+esc(d.notes)+'</p>':'')+'<div class="actions">'+(d.phone?'<a href="tel:'+esc(d.phone)+'">اتصال</a>':'')+(d.whatsapp?'<a href="https://wa.me/'+normPhone(d.whatsapp)+'" target="_blank" rel="noopener">واتساب</a>':'')+'</div></div></article>').join('')||'<div class="empty" style="grid-column:1/-1">لسه مفيش أطباء مسجلين في التخصص ده. هنضيفهم بعد مراجعة بياناتهم.</div>');
+}
 function normalizeSearchText(v){return String(v||'').toLowerCase().replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[ًٌٍَُِّْـ]/g,'').trim()}function doSearch(){const q=$('q').value.trim();if(!q)return;runGlobalSearch(q)}async function runGlobalSearch(q){$('searchResults').innerHTML='<div class="empty">جاري البحث الشامل في كل بيانات التطبيق...</div>';showScreen('searchPage');try{const {data,error}=await sb.rpc('janb_global_search',{search_text:q,result_limit:150});if(error)throw error;const rows=data||[];const groups=[['product','المنتجات'],['service','الخدمات'],['offer','العروض'],['business','المحلات والأنشطة']];let html='<div class="muted" style="margin-bottom:12px">نتائج البحث عن: '+esc(q)+' · '+rows.length+' نتيجة</div>';for(const [type,label] of groups){const list=rows.filter(x=>x.result_type===type);html+='<div class="search-result-head">'+label+' ('+list.length+')</div>';if(!list.length){html+='<div class="empty">لا توجد نتائج في القسم ده.</div>';continue}html+=list.map(x=>{if(type==='business'){const b=businesses.find(z=>z.id===x.id);return b?businessCard(b):'<article class="listing" onclick="openBusinessPage(\''+x.id+'\')"><div class="avatar">🏪</div><div><h3>'+esc(x.title)+'</h3><p>'+esc(x.category_name||'')+' · '+esc(x.description||'')+'</p></div></article>'}if(type==='product'){let p=products.find(z=>z.id===x.id);if(!p){p={id:x.id,business_id:x.business_id,name:x.title,description:x.description,price:x.price,image_url:x.image_url,businesses:{name:x.business_name}};products.push(p)}return productRow(p,true)}if(type==='service')return '<article class="product-row"><div class="product-placeholder">🛠️</div><div style="flex:1"><h4>'+esc(x.title)+'</h4><div class="quantity-small">'+esc(x.business_name||'')+' · '+esc(x.category_name||'')+'</div><div>'+esc(x.description||'')+'</div>'+(x.price!=null?'<div class="price">'+money(x.price)+' جنيه</div>':'')+'<button class="btn-secondary" onclick="openBusinessPage(\''+x.business_id+'\')">افتح النشاط</button></div></article>';return '<article class="product-row"><div class="product-placeholder">🎁</div><div style="flex:1"><h4>'+esc(x.title)+'</h4><div class="quantity-small">'+esc(x.business_name||'')+' · '+esc(x.category_name||'')+'</div><div>'+esc(x.description||'')+'</div>'+(x.discount_percent!=null?'<div class="price">خصم '+money(x.discount_percent)+'%</div>':'')+'<button class="btn-secondary" onclick="openBusinessPage(\''+x.business_id+'\')">افتح النشاط</button></div></article>'}).join('')} $('searchResults').innerHTML=html}catch(e){$('searchResults').innerHTML='<div class="empty">تعذر تنفيذ البحث الشامل: '+esc(e.message)+'</div>';console.error(e)}}
 $('searchBtn').onclick=doSearch;$('q').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()});
 
