@@ -684,7 +684,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111608;
+const JANB_CLOUD_VERSION=2026111611;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 async function checkJanbCloudUpdate(){
@@ -705,15 +705,22 @@ $('cloudUpdateBtn').onclick=async()=>{
  if(janbCloudUpdateBusy)return;
  janbCloudUpdateBusy=true;
  const button=$('cloudUpdateBtn'),status=$('cloudUpdateStatus');
- button.disabled=true;button.textContent='جاري تنزيل التحديث...';status.textContent='بنحدّث واجهة التطبيق من السحابة، من فضلك انتظر';
+ button.disabled=true;button.textContent='جاري تجهيز التحديث...';
+ status.textContent='جاري تحديث التطبيق بأمان. لن يتم إغلاق الصفحة أثناء التنزيل.';
  try{
-  const response=await fetch('https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/index.html?t='+Date.now(),{cache:'no-store'});
-  if(!response.ok)throw new Error('download failed');
-  const html=await response.text();
-  if(!html.includes('id="appShell"'))throw new Error('invalid update');
-  document.open();document.write(html);document.close();
+  if('serviceWorker' in navigator){
+   const registration=await navigator.serviceWorker.getRegistration();
+   if(registration)await registration.update();
+  }
+  const latestUrl=new URL(location.href);
+  latestUrl.searchParams.set('_janb_refresh',String(Date.now()));
+  status.textContent='تم تجهيز التحديث، جاري فتح النسخة الجديدة...';
+  location.replace(latestUrl.toString());
  }catch(e){
-  button.disabled=false;button.textContent='⬆ إعادة محاولة التحديث';status.textContent='تعذر تنزيل التحديث. تأكد من الإنترنت وحاول مرة أخرى';janbCloudUpdateBusy=false;
+  button.disabled=false;button.textContent='⬆ إعادة محاولة التحديث';
+  status.textContent='تعذر تحديث التطبيق الآن. تأكد من الإنترنت وحاول مرة أخرى.';
+  janbCloudUpdateBusy=false;
+  console.warn('Janb safe update failed:',e);
  }
 };
 checkJanbCloudUpdate();
