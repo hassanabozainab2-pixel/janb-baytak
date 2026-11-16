@@ -429,7 +429,7 @@ $('loginOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');open
 $('signupOpenBtn').onclick=()=>{$('accountDropdown').classList.add('hidden');openModal('signupModal')};
 $('goSignupBtn').onclick=()=>{closeModal('loginModal');openModal('signupModal')};
 $('goLoginBtn').onclick=()=>{closeModal('signupModal');openModal('loginModal')};
-const AUTH_EMAIL_REDIRECT=new URL('./',window.location.href).href;
+const AUTH_EMAIL_REDIRECT='https://hassanabozainab2-pixel.github.io/janb-baytak/';
 window.handleNativeAuthCallback=async function(accessToken,refreshToken){try{const {error}=await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});if(error)throw error;history.replaceState({},'',location.pathname);await refreshAuth();$('accountState').textContent='تم تأكيد البريد وتسجيل الدخول بنجاح.';const modal=$('loginModal');if(modal)modal.classList.remove('show');const signup=$('signupModal');if(signup)signup.classList.remove('show');}catch(err){$('accountState').textContent='تم فتح التطبيق لكن تعذر إكمال تسجيل الدخول: '+(err.message||'خطأ غير معروف');}};
 async function handleAuthSubmit(e,mode){
  e.preventDefault();
