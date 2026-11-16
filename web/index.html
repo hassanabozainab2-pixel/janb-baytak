@@ -119,8 +119,8 @@ main{max-width:760px;margin:auto;padding:17px 15px 90px}.section-head{display:fl
 @media(min-width:560px){.product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.library-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:360px){.product-grid,.library-admin-grid{gap:8px}.product-info{padding:9px}.product-price{font-size:12px}}
 
-.bottom-cart-btn{position:fixed;left:14px;right:14px;bottom:12px;z-index:30;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 18px;border:0;border-radius:16px;background:linear-gradient(135deg,#0d5940,#16835d);color:#fff;font:inherit;font-size:15px;font-weight:900;box-shadow:0 5px 20px #0003}
-.bottom-cart-btn span{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 7px;border-radius:20px;background:#e2b64f;color:#30250b;font-size:12px}
+.bottom-cart-btn{position:fixed;left:12px;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));z-index:30;display:flex;align-items:center;justify-content:center;gap:7px;width:auto;min-width:108px;padding:9px 12px;border:0;border-radius:13px;background:linear-gradient(135deg,#0d5940,#16835d);color:#fff;font:inherit;font-size:13px;font-weight:900;box-shadow:0 4px 14px #0003}
+.bottom-cart-btn span{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:20px;background:#e2b64f;color:#30250b;font-size:10px}
 body{padding-bottom:72px}
 .account-dismiss-layer{position:fixed;inset:0;z-index:40;background:transparent;display:none}.account-dismiss-layer.active{display:block}.account-menu{position:relative;z-index:42}
 
@@ -704,7 +704,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111615;
+const JANB_CLOUD_VERSION=2026111716;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 async function checkJanbCloudUpdate(){
