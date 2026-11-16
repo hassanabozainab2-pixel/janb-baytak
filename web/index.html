@@ -524,7 +524,7 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
 (function cleanStrayTextAtBottom(){
   // Remove literal escaped-newline artifacts such as \\n\\n\\n\\,
   // while leaving the real footer branding untouched.
-  const bad = /^\\s*(?:\\\\n){2,}\\\\?\\s*$/;
+  const bad = /^\s*(?:\\n){2,}\\?\s*$/;
   function clean(){
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     const nodes=[];
