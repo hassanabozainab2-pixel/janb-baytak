@@ -234,13 +234,70 @@ async function loadAll(){
  }catch(e){$('connectionStatus').textContent='تعذر تحميل بيانات السحابة';$('latestBusinesses').innerHTML='<div class="empty">تعذر تحميل البيانات: '+esc(e.message||'انتهت مهلة الاتصال')+'</div>';$('businessCount').textContent='تعذر التحميل';console.error('Janb loadAll failed:',e);await loadFeaturedAds();}
 }
 
-/* Real category photos from Pexels. These are generic illustrative photos, not photos of Esna businesses. */
+/* صور طبية مستقلة لكل تخصص — صور توضيحية عامة وليست لأطباء أو عيادات في إسنا. */
 function categoryPhoto(c){
  const slug=String(c&&c.slug||'').toLowerCase(), name=String(c&&c.name||'').toLowerCase();
- const photos={'doctors-clinics':'kat-dis-hekimi-1-960.webp','pharmacies':'kat-dis-hekimi-2-960.webp','pharmacy-store':'kat-dis-hekimi-2-960.webp','medical-supplies':'kat-dis-hekimi-1-960.webp','shops':'hero-6-1600.webp','shop-electrical':'kat-bilgisayar-servis-1-960.webp','shop-mobiles':'kat-bilgisayar-servis-1-960.webp','shop-grocery':'kat-firin-1-960.webp','shop-clothing':'hero-6-1600.webp','shop-beauty':'kat-guzellik-2-960.webp','shop-home':'kat-emlak-5-960.webp','shop-furniture':'kat-emlak-1-960.webp','shop-gold-gifts':'kat-dugun-2-960.webp','food-drink':'kat-kafe-1-960.webp','food-restaurants':'kat-kafe-1-960.webp','food-cafes':'kat-kafe-2-960.webp','food-sweets':'kat-firin-1-960.webp','events-beauty-photo':'kat-dugun-1-960.webp','event-halls':'kat-dugun-1-960.webp','event-hairdressers':'kat-kuafor-berber-1-960.webp','event-beauty-centers':'kat-guzellik-2-960.webp','event-studios':'kat-fotograf-1-960.webp','event-bridal':'kat-dugun-2-960.webp'};
- let file=photos[slug];
- if(!file){if(['صيدل','دواء','طب','عياد','دكتور','تحاليل','أسنان','عظام','قلب','أطفال','جلدية'].some(k=>name.includes(k)))file='kat-dis-hekimi-1-960.webp';else if(['كوافير','تجميل','عطور','مكياج','عرائس'].some(k=>name.includes(k)))file='kat-guzellik-2-960.webp';else if(['مطعم','حلويات','مخبوز','مخبز'].some(k=>name.includes(k)))file='kat-firin-1-960.webp';else if(['كافيه','استوديو','تصوير'].some(k=>name.includes(k)))file='kat-kafe-2-960.webp';else file='hero-6-1600.webp';}
- return 'https://rehberv1.briefikir.com.tr/img/'+file;
+ const base='https://images.unsplash.com/';
+ const photos={
+  'doctors-clinics':'photo-1612349317150-e413f6a5b16d',
+  'pharmacies':'photo-1587854692152-cbe660dbde88',
+  'pharmacy-store':'photo-1587854692152-cbe660dbde88',
+  'medical-supplies':'photo-1576091160399-112ba8d25d1d',
+  'cardiology':'photo-1576091160399-112ba8d25d1d',
+  'dentistry':'photo-1606811971618-4486d14f3f99',
+  'ophthalmology':'photo-1574258495973-f010dfbb5371',
+  'neurology':'photo-1559757175-0eb30cd8c063',
+  'orthopedics':'photo-1584467735871-bc6c8a2d8f5b',
+  'pediatrics':'photo-1472162072942-cd5147eb3902',
+  'ob-gyn':'photo-1559757148-5c350d0d3c56',
+  'internal-medicine':'photo-1576091160550-2173dba999ef',
+  'ent':'photo-1584982751601-97dcc096659c',
+  'dermatology':'photo-1606811971618-4486d14f3f99',
+  'urology':'photo-1584982751601-97dcc096659c',
+  'pulmonology':'photo-1511174511562-5f7f18b874f8',
+  'labs':'photo-1579154204601-01588f351e67',
+  'radiology':'photo-1511174511562-5f7f18b874f8',
+  'shops':'photo-1441986300917-64674bd600d8',
+  'shop-electrical':'photo-1498049794561-7780e7231661',
+  'shop-mobiles':'photo-1511707171634-5f897ff02aa9',
+  'shop-grocery':'photo-1542838132-92c53300491e',
+  'shop-clothing':'photo-1445205170230-053b83016050',
+  'shop-beauty':'photo-1596462502278-27bfdc403348',
+  'shop-home':'photo-1556911220-bff31c812dba',
+  'shop-furniture':'photo-1555041469-a586c61ea9bc',
+  'shop-gold-gifts':'photo-1515562141207-7a88fb7ce338',
+  'food-drink':'photo-1517248135467-4c7edcad34c4',
+  'food-restaurants':'photo-1517248135467-4c7edcad34c4',
+  'food-cafes':'photo-150 flooring',
+  'food-sweets':'photo-1509440159596-0249088772ff',
+  'events-beauty-photo':'photo-1519167758481-83f550bb49b3',
+  'event-halls':'photo-1519167758481-83f550bb49b3',
+  'event-hairdressers':'photo-1560066984-138dadb4c035',
+  'event-beauty-centers':'photo-1596462502278-27bfdc403348',
+  'event-studios':'photo- photographer',
+  'event-bridal':'photo-1591604466107-ec97de577aff'
+ };
+ let photo=photos[slug];
+ if(!photo){
+  if(/قلب|cardio/.test(name))photo=photos.cardiology;
+  else if(/أسنان|اسنان|dent/.test(name))photo=photos.dentistry;
+  else if(/عيون|عيون|نظر|ophthalm/.test(name))photo=photos.ophthalmology;
+  else if(/مخ|أعصاب|اعصاب|neuro/.test(name))photo=photos.neurology;
+  else if(/عظام|orthop/.test(name))photo=photos.orthopedics;
+  else if(/أطفال|اطفال|طفل|pediatr/.test(name))photo=photos.pediatrics;
+  else if(/نساء|توليد|ob.?gyn/.test(name))photo=photos['ob-gyn'];
+  else if(/باطن|internal/.test(name))photo=photos['internal-medicine'];
+  else if(/أنف|اذن|أذن|ent/.test(name))photo=photos.ent;
+  else if(/جلد|تجميل|dermat/.test(name))photo=photos.dermatology;
+  else if(/مسالك|urolog/.test(name))photo=photos.urology;
+  else if(/صدر|تنفس|pulmon/.test(name))photo=photos.pulmonology;
+  else if(/تحاليل|معمل|مختبر|labs/.test(name))photo=photos.labs;
+  else if(/أشعة|اشعة|radiol/.test(name))photo=photos.radiology;
+  else if(/صيدل|دواء/.test(name))photo=photos.pharmacies;
+  else if(/طب|عياد|دكتور/.test(name))photo=photos['doctors-clinics'];
+  else photo=photos.shops;
+ }
+ return base+photo+'?auto=format&fit=crop&w=900&q=82';
 }
 function categoryPhotoMarkup(c){
  return '<img class="cat-photo" src="'+categoryPhoto(c)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'cat-image-missing\')"><span class="cat-photo-fallback" aria-hidden="true"></span>';
