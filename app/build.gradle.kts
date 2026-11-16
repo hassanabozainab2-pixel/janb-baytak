@@ -42,3 +42,5 @@ dependencies {
  implementation("androidx.compose.foundation:foundation")
  debugImplementation("androidx.compose.ui:ui-tooling")
 }
+
+// Signing certificate continuity diagnostic is performed in GitHub Actions.
