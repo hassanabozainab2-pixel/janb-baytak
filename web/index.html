@@ -432,10 +432,10 @@ $('goLoginBtn').onclick=()=>{closeModal('signupModal');openModal('loginModal')};
 const AUTH_EMAIL_REDIRECT='https://hassanabozainab2-pixel.github.io/janb-baytak/';
 window.handleNativeAuthCallback=async function(accessToken,refreshToken){try{const {error}=await sb.auth.setSession({access_token:accessToken,refresh_token:refreshToken});if(error)throw error;history.replaceState({},'',location.pathname);await refreshAuth();$('accountState').textContent='تم تأكيد البريد وتسجيل الدخول بنجاح.';const modal=$('loginModal');if(modal)modal.classList.remove('show');const signup=$('signupModal');if(signup)signup.classList.remove('show');}catch(err){$('accountState').textContent='تم فتح التطبيق لكن تعذر إكمال تسجيل الدخول: '+(err.message||'خطأ غير معروف');}};
 window.openJanbGmail=function(){
-  const inbox='https://mail.google.com/mail/u/0/#inbox';
-  const fallback='https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F%23inbox';
-  const intent='intent://mail.google.com/mail/u/0/#inbox#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url='+fallback+';end';
-  try{window.location.href=intent;}catch(err){window.location.href=inbox;}
+  const target='https://mail.google.com/mail/u/0/#search/from%3Ahassanabozainab2%40gmail.com';
+  const fallback='https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2F0%2F%23search%2Ffrom%253Ahassanabozainab2%2540gmail.com';
+  const intent='intent://mail.google.com/mail/u/0/#search/from%3Ahassanabozainab2%40gmail.com#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url='+fallback+';end';
+  try{window.location.href=intent;}catch(err){window.location.href=target;}
 };
 async function handleAuthSubmit(e,mode){
  e.preventDefault();
