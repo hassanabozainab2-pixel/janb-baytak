@@ -216,7 +216,7 @@ function normPhone(v){return String(v||'').replace(/\D/g,'').replace(/^0/,'20')}
 function phoneLinks(phone,wa,activityId){let out='';const attrs=activityId?' data-janb-analytics-event="':'',kind=activityId?' data-janb-analytics-type="business" data-janb-analytics-id="'+esc(activityId)+'"':'';if(phone)out+='<a onclick="event.stopPropagation()"'+(activityId?attrs+'call_click"'+kind:'')+' href="tel:'+esc(phone)+'">☎ اتصال</a>';if(wa||phone)out+='<a class="whatsapp" onclick="event.stopPropagation()"'+(activityId?attrs+'whatsapp_click"'+kind:'')+' href="https://wa.me/'+normPhone(wa||phone)+'">واتساب</a>';return out}
 
 function getJanbAnalyticsSessionId(){
- try{let id=sessionStorage.getItem('janbAnalyticsSessionId');if(!id){id=window.crypto?.randomUUID?window.crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);sessionStorage.setItem('janbAnalyticsSessionId',id)}return id}catch(e){return window.__janbAnalyticsSessionId||(window.__janbAnalyticsSessionId=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))}
+ try{let id=sessionStorage.getItem('janbAnalyticsSessionId');if(!id){id=window.crypto?.randomUUID?window.crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});sessionStorage.setItem('janbAnalyticsSessionId',id)}return id}catch(e){return window.__janbAnalyticsSessionId||(window.__janbAnalyticsSessionId='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)}))}
 }
 async function recordActivityAnalytics(type,id,eventType){
  if(!id||!['business','doctor'].includes(type)||!['view','call_click','whatsapp_click'].includes(eventType))return;
