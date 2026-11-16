@@ -113,12 +113,13 @@ main{max-width:760px;margin:auto;padding:17px 15px 90px}.section-head{display:fl
 #libraryAdminSearch,#libraryAdminCategory{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;margin:5px 0;font:inherit;background:#fff}
 @media(min-width:560px){.product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.library-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:360px){.product-grid,.library-admin-grid{gap:8px}.product-info{padding:9px}.product-price{font-size:12px}}
+.version-label{display:inline-block;margin-top:5px;padding:4px 8px;border:1px solid #ffffff55;border-radius:8px;background:#ffffff18;color:#fff;font-size:10px;font-weight:800;line-height:1.5;direction:rtl}
 </style>
 </head>
 <body>
 <div id="appShell">
 <header>
- <div class="top"><div class="brand-area"><div><div class="brand">جنب بيتك</div><div class="tag">كل اللي تحتاجه حواليك</div></div></div>
+ <div class="top"><div class="brand-area"><div><div class="brand">جنب بيتك</div><div class="tag">كل اللي تحتاجه حواليك</div><div class="version-label">نسخة التطبيق الحالية: 2026111601 · التحديث المطلوب: 2026111721</div></div></div>
   <div class="top-actions"><button class="cart-header-btn" type="button" onclick="showCart()">🛒 السلة <span id="cartCount">0</span></button><button class="fab" id="addBtn" type="button">＋ أضف نشاطك</button><button type="button" class="featured-request-btn" id="featuredRequestBtn">⭐ إعلان مميز</button><div class="account-menu"><button class="account-toggle" id="accountToggle" type="button">حسابك ▾</button><div class="account-dropdown hidden" id="accountDropdown"><div id="accountState" class="smallnote">تصفح براحتك، وسجّل فقط لإضافة أو إدارة نشاطك.</div><div class="rowbtn"><button type="button" id="loginOpenBtn" onclick="document.getElementById('accountDropdown').classList.add('hidden');document.getElementById('loginModal').classList.add('show')">تسجيل الدخول</button><button type="button" id="signupOpenBtn" onclick="document.getElementById('accountDropdown').classList.add('hidden');document.getElementById('signupModal').classList.add('show')">إنشاء حساب جديد</button><button id="ownerOpenBtn" class="hidden">إدارة نشاطي</button><button id="adminOpenBtn" class="hidden">لوحة الإدارة</button><button id="logoutBtn" class="hidden">تسجيل خروج</button></div></div></div></div>
  </div>
  <div class="pill" id="connectionStatus" style="display:inline-block;margin-top:12px">إسنا · جاري الاتصال</div>
