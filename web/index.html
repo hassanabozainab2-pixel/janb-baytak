@@ -717,11 +717,37 @@ async function openSubscriptionPaymentDetails(id){
  const overlay=document.createElement('div');
  overlay.id='subscriptionPaymentDetailsModal';
  overlay.style.cssText='position:fixed;inset:0;z-index:100000;background:#0009;display:flex;align-items:flex-end;justify-content:center;padding:10px';
- overlay.innerHTML='<section dir="rtl" style="width:min(100%,650px);max-height:94vh;overflow:auto;background:#f7faf8;border-radius:22px;padding:16px;box-shadow:0 12px 40px #0004"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0;color:#126b4d">تفاصيل طلب الاشتراك</h2><button id="closeSubscriptionDetails" class="btn-secondary" type="button">إغلاق ✕</button></div><div class="panel"><b>'+val(business.name||'اشتراك غير معروف')+'</b><p class="smallnote">'+(p.doctor_id?'طلب طبيب':'طلب نشاط تجاري')+' · '+val(statusLabel)+'</p></div><div class="panel"><h3>بيانات النشاط</h3><p>اسم النشاط/العيادة: '+val(business.name)+'</p><p>اسم العيادة: '+val(business.clinic_name)+'</p><p>رقم الهاتف: '+val(business.phone)+'</p><p>واتساب: '+val(business.whatsapp)+'</p><p>المحافظة/المدينة: '+val(business.city)+'</p><p>العنوان: '+val(business.address)+'</p><p>الوصف: '+val(business.description)+'</p><p>مواعيد العمل: '+val(business.working_hours)+'</p><p>ملاحظات: '+val(business.notes)+'</p><p>حالة النشاط الحالية: '+val(business.status)+'</p></div><div class="panel"><h3>تفاصيل الدفع والاشتراك</h3><p>الباقة: '+val(planLabel)+'</p><p>المبلغ: '+val(p.amount_egp)+' جنيه</p><p>طريقة الدفع: '+val(p.payment_method==='etisalat_cash'?'اتصالات كاش':p.payment_method)+'</p><p>رقم المحفظة المحوّل إليها: '+val(p.wallet_number)+'</p><p>رقم العملية/التحويل: <b style="overflow-wrap:anywhere">'+val(p.transaction_reference)+'</b></p><p>تاريخ إرسال الطلب: '+val(dateLabel)+'</p><p>ملاحظة الإدارة: '+val(p.admin_note)+'</p></div><div class="panel"><h3>صورة إيصال التحويل</h3>'+receiptHtml+'</div>'+(p.status==='pending'?'<div class="panel"><p class="smallnote">لا تعتمد الدفع إلا بعد مراجعة رقم العملية وصورة الإيصال والتأكد من وصول التحويل في المحفظة.</p><div class="rowbtn"><button id="approveSubscriptionFromDetails" class="submit" type="button">تأكيد الدفع وتفعيل النشاط</button><button id="rejectSubscriptionFromDetails" class="btn-danger" type="button">رفض الطلب</button></div></div>':'<div class="detail-demo-note">تمت مراجعة هذا الطلب بالفعل؛ لا توجد إجراءات اعتماد إضافية.</div>')+'</section>';
+ overlay.innerHTML='<section dir="rtl" style="width:min(100%,650px);max-height:94vh;overflow:auto;background:#f7faf8;border-radius:22px;padding:16px;box-shadow:0 12px 40px #0004"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0;color:#126b4d">تفاصيل طلب الاشتراك</h2><button id="closeSubscriptionDetails" class="btn-secondary" type="button">إغلاق ✕</button></div><div class="panel"><b>'+val(business.name||'اشتراك غير معروف')+'</b><p class="smallnote">'+(p.doctor_id?'طلب طبيب':'طلب نشاط تجاري')+' · '+val(statusLabel)+'</p></div><div class="panel"><h3>بيانات النشاط</h3><p>اسم النشاط/العيادة: '+val(business.name)+'</p><p>اسم العيادة: '+val(business.clinic_name)+'</p><p>رقم الهاتف: '+val(business.phone)+'</p><p>واتساب: '+val(business.whatsapp)+'</p><p>المحافظة/المدينة: '+val(business.city)+'</p><p>العنوان: '+val(business.address)+'</p><p>الوصف: '+val(business.description)+'</p><p>مواعيد العمل: '+val(business.working_hours)+'</p><p>ملاحظات: '+val(business.notes)+'</p><p>حالة النشاط الحالية: '+val(business.status)+'</p></div><div class="panel"><h3>تفاصيل الدفع والاشتراك</h3><p>الباقة: '+val(planLabel)+'</p><p>المبلغ: '+val(p.amount_egp)+' جنيه</p><p>طريقة الدفع: '+val(p.payment_method==='etisalat_cash'?'اتصالات كاش':p.payment_method)+'</p><p>رقم المحفظة المحوّل إليها: '+val(p.wallet_number)+'</p><p>رقم العملية/التحويل: <b style="overflow-wrap:anywhere">'+val(p.transaction_reference)+'</b></p><p>تاريخ إرسال الطلب: '+val(dateLabel)+'</p><p>ملاحظة الإدارة: '+val(p.admin_note)+'</p></div><div class="panel"><h3>صورة إيصال التحويل</h3>'+receiptHtml+'</div>'+(p.status==='pending'?'<div class="panel"><h3>استكمال إثبات الدفع</h3><label for="adminPaymentReference">رقم العملية الحقيقي</label><input id="adminPaymentReference" type="text" value="'+val(p.transaction_reference==='TEST-HALLAWY-NOT-PAID-20261117'?'':p.transaction_reference)+'" placeholder="اكتب رقم العملية كما يظهر في إيصال المحفظة"><label for="adminPaymentReceiptFile">صورة الإيصال من الموبايل</label><input id="adminPaymentReceiptFile" type="file" accept="image/jpeg,image/png,image/webp"><button id="saveAdminPaymentEvidence" class="btn-secondary" type="button">حفظ رقم العملية وصورة الإيصال</button><p class="smallnote">لا تستخدم بيانات تجريبية هنا. ارفع صورة التحويل الحقيقي واكتب رقم العملية المطابق لها.</p></div>':'')+(p.status==='pending'?'<div class="panel"><p class="smallnote">لا تعتمد الدفع إلا بعد مراجعة رقم العملية وصورة الإيصال والتأكد من وصول التحويل في المحفظة.</p><div class="rowbtn"><button id="approveSubscriptionFromDetails" class="submit" type="button">تأكيد الدفع وتفعيل النشاط</button><button id="rejectSubscriptionFromDetails" class="btn-danger" type="button">رفض الطلب</button></div></div>':'<div class="detail-demo-note">تمت مراجعة هذا الطلب بالفعل؛ لا توجد إجراءات اعتماد إضافية.</div>')+'</section>';
  document.body.appendChild(overlay);
  const close=()=>overlay.remove();
  overlay.querySelector('#closeSubscriptionDetails').onclick=close;
  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ const saveEvidence=overlay.querySelector('#saveAdminPaymentEvidence');
+ if(saveEvidence)saveEvidence.onclick=async()=>{
+  const reference=overlay.querySelector('#adminPaymentReference').value.trim();
+  const file=overlay.querySelector('#adminPaymentReceiptFile').files[0];
+  if(!reference)return alert('اكتب رقم العملية الحقيقي أولاً.');
+  if(!file&&!p.receipt_path)return alert('ارفع صورة إيصال التحويل أولاً.');
+  if(file&&(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5242880))return alert('الصورة لازم تكون JPG أو PNG أو WEBP وبحد أقصى 5 ميجابايت.');
+  saveEvidence.disabled=true;saveEvidence.textContent='جاري الحفظ...';
+  try{
+   const duplicate=await sb.from('subscription_payment_requests').select('id').eq('transaction_reference',reference).neq('id',id).maybeSingle();
+   if(duplicate.error)throw duplicate.error;
+   if(duplicate.data)throw new Error('رقم العملية مسجل في طلب آخر.');
+   let receiptPath=p.receipt_path;
+   if(file){
+    const ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg';
+    receiptPath=currentUser.id+'/admin/'+id+'/'+crypto.randomUUID()+'.'+ext;
+    const uploaded=await sb.storage.from('payment-receipts').upload(receiptPath,file,{contentType:file.type,upsert:false});
+    if(uploaded.error)throw uploaded.error;
+   }
+   const saved=await sb.from('subscription_payment_requests').update({transaction_reference:reference,receipt_path:receiptPath}).eq('id',id).eq('status','pending');
+   if(saved.error)throw saved.error;
+   alert('تم حفظ رقم العملية وصورة الإيصال في الطلب. راجع البيانات قبل تأكيد الدفع.');
+   close();await openSubscriptionPaymentDetails(id);
+  }catch(err){alert('تعذر حفظ الإثبات: '+(err.message||'حاول مرة أخرى'))}
+  finally{saveEvidence.disabled=false;saveEvidence.textContent='حفظ رقم العملية وصورة الإيصال'}
+ };
  const approve=overlay.querySelector('#approveSubscriptionFromDetails');
  const reject=overlay.querySelector('#rejectSubscriptionFromDetails');
  if(approve)approve.onclick=async()=>{if(!confirm('تأكيد مراجعة التحويل وتفعيل النشاط لمدة الباقة؟'))return;approve.disabled=true;await reviewSubscriptionPayment(id,true);close()};
