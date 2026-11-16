@@ -640,7 +640,7 @@ async function openAdminPage(){
   sb.from('products').select('id,business_id,name,price,is_active,created_at,businesses(name)').order('created_at',{ascending:false}).limit(300),
   sb.from('services').select('id,business_id,name,price,is_active,created_at,businesses(name)').order('created_at',{ascending:false}).limit(300),
   sb.from('offers').select('id,business_id,title,description,is_active,created_at,businesses(name)').order('created_at',{ascending:false}).limit(300),
-  sb.from('subscription_payment_requests').select('id,business_id,doctor_id,owner_id,plan_code,amount_egp,wallet_number,payment_method,transaction_reference,receipt_path,status,admin_note,reviewed_at,reviewed_by,created_at,businesses(name,phone,whatsapp,address,city,description,logo_url,cover_url,status),doctors(name,clinic_name,phone,whatsapp,address,city,working_hours,notes)').order('created_at',{ascending:false}).limit(300)
+  sb.from('subscription_payment_requests').select('id,business_id,doctor_id,owner_id,plan_code,amount_egp,wallet_number,payment_method,transaction_reference,receipt_path,status,admin_note,reviewed_at,reviewed_by,created_at,businesses(name,phone,whatsapp,address,city,description,logo_url,cover_url,status),doctors(name,clinic_name,phone,whatsapp,address,city,working_hours,notes)').neq('status','rejected').order('created_at',{ascending:false}).limit(300)
  ]);
  const errors=[bs.error,ads.error,cats.error,users.error,prs.error,srs.error,ofs.error,payments.error].filter(Boolean);
  if(errors.length){$('adminContent').innerHTML='<div class="empty">تعذر تحميل بعض بيانات الإدارة: '+esc(errors.map(x=>x.message).join(' · '))+'</div>';return}
