@@ -3,6 +3,14 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main", "admin-dashboard-safe-20261115" ]
+    paths:
+      - "app/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
 permissions:
   contents: write
 jobs:
