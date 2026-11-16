@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var pendingAuthUri: Uri? = null
+    private var webPageReady = false
 
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
         )
         webView.setBackgroundColor(Color.rgb(246, 248, 246))
         webView.addJavascriptInterface(NativePushBridge(), "JanbNativePush")
+        webView.addJavascriptInterface(NativeAuthBridge(), "JanbNativeAuth")
         webView.visibility = View.VISIBLE
 
         webView.settings.apply {
@@ -75,6 +77,7 @@ class MainActivity : ComponentActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                webPageReady = true
                 consumeAuthCallback()
             }
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -128,6 +131,11 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    private inner class NativeAuthBridge {
+        @JavascriptInterface
+        fun isNativeApp(): Boolean = true
+    }
+
     private inner class NativePushBridge {
         @JavascriptInterface
         fun getFcmToken(): String = getSharedPreferences("janb_push", MODE_PRIVATE).getString("fcm_token", "") ?: ""
@@ -167,16 +175,20 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun consumeAuthCallback() {
+        if (!webPageReady || !::webView.isInitialized) return
         val uri = pendingAuthUri ?: return
         if (uri.scheme != "janbbaytak" || uri.host != "auth" || uri.path != "/callback") return
-        val fragment = uri.fragment ?: return
-        val params = Uri.parse("https://callback.local/?$fragment")
+        val rawParams = uri.fragment ?: uri.encodedQuery ?: return
+        val params = Uri.parse("https://callback.local/?$rawParams")
         val accessToken = params.getQueryParameter("access_token") ?: return
         val refreshToken = params.getQueryParameter("refresh_token") ?: return
-        pendingAuthUri = null
         val access = JSONObject.quote(accessToken)
         val refresh = JSONObject.quote(refreshToken)
-        webView.evaluateJavascript("window.handleNativeAuthCallback && window.handleNativeAuthCallback($access,$refresh)", null)
+        webView.evaluateJavascript(
+            "(function(){if(typeof window.handleNativeAuthCallback!=='function')return 'wait';window.handleNativeAuthCallback($access,$refresh);return 'called';})()"
+        ) { result ->
+            if (result == "\"called\"") pendingAuthUri = null
+        }
     }
 
     override fun onDestroy() {
