@@ -198,7 +198,7 @@ const janbFetchWithTimeout=(input,init={})=>{
  if(init.signal){if(init.signal.aborted)controller.abort();else init.signal.addEventListener('abort',()=>controller.abort(),{once:true});}
  return fetch(input,{...init,signal:controller.signal}).finally(()=>clearTimeout(timer));
 };
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:janbFetchWithTimeout},realtime:{logger:(kind,msg,data)=>console.debug('[Janb Realtime]',kind,msg,data)}});
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'},global:{fetch:janbFetchWithTimeout},realtime:{logger:(kind,msg,data)=>console.debug('[Janb Realtime]',kind,msg,data)}});
 const CATS=[
  {slug:'transport',name:'المواصلات',icon:'🚕'},{slug:'shops-trade',name:'المحلات والتجارة',icon:'🏪'},
  {slug:'restaurants',name:'المطاعم',icon:'🍽️'},{slug:'public-services',name:'الخدمات العامة',icon:'🧰'},
@@ -718,4 +718,50 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
   }
 })();
 </script>
+
+<script>
+/* Janb Baytak: visible, safe recovery for email-confirmation returns. */
+(function janbEmailConfirmationReturn(){
+  const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+  const queryParams=new URLSearchParams(location.search);
+  const hasAuthReturn=hashParams.has('access_token')||hashParams.has('error')||hashParams.has('error_code')||queryParams.has('code')||queryParams.has('error');
+  if(!hasAuthReturn)return;
+  const panel=document.createElement('div');
+  panel.id='janbAuthReturnPanel';
+  panel.dir='rtl';
+  panel.style.cssText='position:fixed;inset:0;z-index:100000;background:#f4faf6;display:grid;place-items:center;padding:22px;font-family:system-ui,Tahoma,Arial';
+  panel.innerHTML='<div style="width:min(100%,430px);background:white;border:1px solid #dce9df;border-radius:20px;padding:24px;text-align:center;box-shadow:0 10px 35px #17452b18"><div style="font-size:38px">✉️</div><h2 style="color:#126b4d;margin:10px 0">تأكيد بريد جنب بيتك</h2><p id="janbAuthReturnMessage" style="line-height:1.9;color:#52645a">جاري التحقق من رابط التأكيد… من فضلك انتظر.</p><button id="janbAuthReturnButton" style="display:none;border:0;border-radius:12px;padding:12px 20px;background:#126b4d;color:white;font-weight:800;font:inherit">الرجوع إلى جنب بيتك</button></div>';
+  document.body.appendChild(panel);
+  const message=panel.querySelector('#janbAuthReturnMessage');
+  const button=panel.querySelector('#janbAuthReturnButton');
+  button.onclick=()=>{panel.remove();history.replaceState({},'',location.pathname);};
+  const fail=(text)=>{message.textContent=text;button.style.display='inline-block';};
+  const finish=async()=>{
+    try{
+      if(!window.supabase||typeof sb==='undefined')throw new Error('تعذر تحميل خدمة تسجيل الدخول. افتح التطبيق من جديد.');
+      const {data,error}=await sb.auth.getSession();
+      if(error)throw error;
+      if(data.session){
+        if(typeof currentUser!=='undefined')currentUser=data.session.user;
+        if(typeof refreshAuth==='function')await refreshAuth();
+        history.replaceState({},'',location.pathname);
+        message.textContent='تم تأكيد البريد الإلكتروني بنجاح. حسابك جاهز، يمكنك الرجوع إلى جنب بيتك.';
+        button.textContent='فتح التطبيق';
+        button.style.display='inline-block';
+        return;
+      }
+      const errText=hashParams.get('error_description')||queryParams.get('error_description');
+      if(errText)throw new Error(errText);
+      if(queryParams.has('code'))throw new Error('لم يكتمل تبادل رمز التأكيد. افتح أحدث رسالة تأكيد من نفس المتصفح الذي بدأت منه التسجيل.');
+      throw new Error('لم نعثر على جلسة مؤكدة. قد يكون الرابط قديمًا أو استُخدم من قبل. اطلب رسالة تأكيد جديدة وافتح أحدث رسالة فقط.');
+    }catch(err){
+      console.warn('Janb email confirmation return:',err);
+      fail(err.message||'تعذر تأكيد البريد. اطلب رسالة جديدة وحاول مرة أخرى.');
+    }
+  };
+  window.addEventListener('load',()=>setTimeout(finish,700),{once:true});
+  setTimeout(finish,1400);
+})();
+</script>
+
 </body></html>
