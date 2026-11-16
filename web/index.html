@@ -152,6 +152,7 @@ body{padding-bottom:72px}
 
 
 
+<section class="screen" id="doctorsSpecialtyPage"><div class="screen-top"><button onclick="closeScreen('doctorsSpecialtyPage')">← رجوع للتخصصات</button><div><div class="screen-title" id="doctorSpecialtyTitle">الأطباء</div><div class="store-sub">أطباء التخصص في إسنا</div></div></div><div class="screen-body"><div id="doctorResults" class="cards"></div></div></section>
 <section class="screen" id="doctorsPage"><div class="screen-top"><button onclick="closeScreen('doctorsPage')">← رجوع</button><div><div class="screen-title">دليل أطباء إسنا</div><div class="store-sub">اختار التخصص لعرض الأطباء المسجلين</div></div></div><div class="screen-body"><div id="doctorSpecialties" class="categories"><div class="empty">جاري تحميل التخصصات...</div></div><div id="doctorResults" class="cards" style="margin-top:14px"></div></div></section>
 <section class="screen" id="categoryPage"><div class="screen-top"><button onclick="closeScreen('categoryPage')">← رجوع</button><div><div class="screen-title" id="categoryTitle">القسم</div><div class="store-sub">قائمة الأنشطة داخل القسم</div></div></div><div class="screen-body"><div id="categoryListings" class="cards"></div></div></section>
 <section class="screen" id="searchPage"><div class="screen-top"><button onclick="closeScreen('searchPage')">← رجوع</button><div class="screen-title">نتائج البحث</div></div><div class="screen-body"><div id="searchResults"></div></div></section>
@@ -192,7 +193,7 @@ let currentUser=null,authMode='login',categories=[],businesses=[],products=[],se
 try{cart=JSON.parse(localStorage.getItem('janb_cart_v1')||'[]');if(!Array.isArray(cart))cart=[];}catch(e){cart=[];}
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('ar-EG',{maximumFractionDigits:2});
-const screenStack=[];function showScreen(id){if(screenStack[screenStack.length-1]!==id)screenStack.push(id);$(id).classList.add('show');window.scrollTo(0,0)}function closeScreen(id){$(id).classList.remove('show');const i=screenStack.lastIndexOf(id);if(i>=0)screenStack.splice(i,1)}function handleAppBack(){const modals=['productModal','cartModal','adModal','businessModal','accountModal','loginModal','signupModal'];for(const id of modals){const e=$(id);if(e&&e.classList.contains('show')){e.classList.remove('show');return true}}const store=$('storePage');if(store&&store.classList.contains('show')){store.classList.remove('show');return true}const id=screenStack.pop();if(id){$(id).classList.remove('show');const prev=screenStack[screenStack.length-1];if(prev)$(prev).classList.add('show');return true}return false}window.handleAppBack=handleAppBack;
+const screenStack=[];function showScreen(id){if(screenStack[screenStack.length-1]!==id)screenStack.push(id);$(id).classList.add('show');window.scrollTo(0,0)}function closeScreen(id){const el=$(id);if(el)el.classList.remove('show');const i=screenStack.lastIndexOf(id);if(i>=0)screenStack.splice(i,1);const prev=screenStack[screenStack.length-1];if(prev){const p=$(prev);if(p)p.classList.add('show')}else{const home=$('homePage');if(home)home.classList.add('show')}}function handleAppBack(){const modals=['productModal','cartModal','adModal','businessModal','accountModal','loginModal','signupModal'];for(const id of modals){const e=$(id);if(e&&e.classList.contains('show')){e.classList.remove('show');return true}}const store=$('storePage');if(store&&store.classList.contains('show')){store.classList.remove('show');return true}const id=screenStack.pop();if(id){$(id).classList.remove('show');const prev=screenStack[screenStack.length-1];if(prev)$(prev).classList.add('show');return true}return false}window.handleAppBack=handleAppBack;
 function openModal(id){$(id).classList.add('show')}function closeModal(id){$(id).classList.remove('show')}
 function normPhone(v){return String(v||'').replace(/\D/g,'').replace(/^0/,'20')}
 function phoneLinks(phone,wa){let out='';if(phone)out+='<a onclick="event.stopPropagation()" href="tel:'+esc(phone)+'">☎ اتصال</a>';if(wa||phone)out+='<a class="whatsapp" onclick="event.stopPropagation()" href="https://wa.me/'+normPhone(wa||phone)+'">واتساب</a>';return out}
@@ -263,6 +264,8 @@ async function openDoctorsDirectory(){
  $('doctorSpecialties').querySelectorAll('[data-specialty]').forEach(btn=>btn.addEventListener('click',()=>loadDoctorsBySpecialty(btn.dataset.specialty,rows.find(x=>x.id===btn.dataset.specialty)?.name||'التخصص')));
 }
 async function loadDoctorsBySpecialty(id,name){
+ $('doctorSpecialtyTitle').textContent='أطباء '+name;
+ showScreen('doctorsSpecialtyPage');
  $('doctorResults').innerHTML='<div class="empty">جاري تحميل أطباء '+esc(name)+'...</div>';
  const {data,error}=await sb.from('doctors').select('id,name,clinic_name,address,city,phone,whatsapp,working_hours,notes').eq('specialty_id',id).eq('is_active',true).eq('city','إسنا').order('name');
  if(error){$('doctorResults').innerHTML='<div class="empty">تعذر تحميل الأطباء حاليًا.</div>';return}
