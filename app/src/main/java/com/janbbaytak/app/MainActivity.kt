@@ -1,6 +1,12 @@
 package com.janbbaytak.app
 
 import android.Manifest
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
+import android.os.Environment
+import android.provider.Settings
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -20,6 +26,14 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var pendingAuthUri: Uri? = null
+    private val updatePrefs by lazy { getSharedPreferences("janb_app_update", MODE_PRIVATE) }
+    private val updateDownloadReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val completedId = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
+            val expectedId = updatePrefs.getLong("download_id", -1L)
+            if (completedId == expectedId && completedId != -1L) installDownloadedUpdate(completedId)
+        }
+    }
 
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
@@ -105,6 +119,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContentView(webView)
+        registerReceiver(updateDownloadReceiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED)
         setupFirebaseMessaging()
         loadLatestInterface()
         checkForAppUpdate()
@@ -178,6 +193,82 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript("window.handleNativeAuthCallback && window.handleNativeAuthCallback($access,$refresh)", null)
     }
 
+    override fun onResume() {
+        super.onResume()
+        val pendingId = updatePrefs.getLong("download_id", -1L)
+        if (pendingId != -1L && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && packageManager.canRequestPackageInstalls()) {
+            installDownloadedUpdate(pendingId)
+        }
+    }
+
+    override fun onDestroy() {
+        try { unregisterReceiver(updateDownloadReceiver) } catch (_: Exception) {}
+        super.onDestroy()
+    }
+
+    private fun compareVersions(first: String, second: String): Int {
+        val a = Regex("\\d+").findAll(first).map { it.value.toIntOrNull() ?: 0 }.toList()
+        val b = Regex("\\d+").findAll(second).map { it.value.toIntOrNull() ?: 0 }.toList()
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val left = a.getOrElse(i) { 0 }
+            val right = b.getOrElse(i) { 0 }
+            if (left != right) return left.compareTo(right)
+        }
+        return 0
+    }
+
+    private fun downloadUpdate(apkUrl: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(apkUrl))
+                .setTitle("تحديث جنب بيتك")
+                .setDescription("جاري تنزيل التحديث الجديد...")
+                .setMimeType("application/vnd.android.package-archive")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(false)
+                .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "janb-baytak-update.apk")
+            val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val id = manager.enqueue(request)
+            updatePrefs.edit().putLong("download_id", id).apply()
+            android.widget.Toast.makeText(this, "بدأ تنزيل التحديث. هتظهر لك رسالة التثبيت بعد ما يكتمل.", android.widget.Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            android.widget.Toast.makeText(this, "تعذر بدء تنزيل التحديث. حاول مرة أخرى.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun installDownloadedUpdate(downloadId: Long) {
+        try {
+            val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val query = DownloadManager.Query().setFilterById(downloadId)
+            manager.query(query).use { cursor ->
+                if (!cursor.moveToFirst()) return
+                val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                if (status != DownloadManager.STATUS_SUCCESSFUL) return
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("السماح بتثبيت التحديث")
+                    .setMessage("فعّل السماح بتثبيت التطبيقات من هذا المصدر مرة واحدة، وبعدها ارجع للتطبيق لإكمال التحديث.")
+                    .setPositiveButton("فتح الإعدادات") { _, _ ->
+                        startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+                    }
+                    .setNegativeButton("لاحقًا", null)
+                    .show()
+                return
+            }
+            val apkUri = manager.getUriForDownloadedFile(downloadId) ?: return
+            val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(installIntent)
+            updatePrefs.edit().remove("download_id").apply()
+        } catch (_: Exception) {
+            android.widget.Toast.makeText(this, "التحديث اتنزّل، لكن تعذر فتح شاشة التثبيت. افتح إشعار التنزيل وحاول التثبيت.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun checkForAppUpdate() {
         Thread {
             try {
@@ -199,17 +290,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val currentVersion = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-                if (latestTag.isNotBlank() && latestTag.removePrefix("v") != currentVersion && !apkUrl.isNullOrBlank()) {
+                if (latestTag.isNotBlank() && compareVersions(latestTag.removePrefix("v"), currentVersion) > 0 && !apkUrl.isNullOrBlank()) {
                     runOnUiThread {
                         android.app.AlertDialog.Builder(this)
                             .setTitle("تحديث جديد لجنب بيتك")
                             .setMessage("في إصدار أحدث من التطبيق. تحب تنزّله دلوقتي؟")
                             .setPositiveButton("تنزيل التحديث") { _, _ ->
-                                try {
-                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl)))
-                                } catch (_: Exception) {
-                                    android.widget.Toast.makeText(this, "تعذر فتح رابط التحديث", android.widget.Toast.LENGTH_LONG).show()
-                                }
+                                downloadUpdate(apkUrl!!)
                             }
                             .setNegativeButton("لاحقًا", null)
                             .show()
