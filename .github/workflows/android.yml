@@ -58,6 +58,26 @@ jobs:
       - name: Build signed release APK
         if: env.ANDROID_KEYSTORE_BASE64 != ''
         run: gradle assembleRelease
+      - name: Verify signing certificate continuity
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        run: |
+          set -euo pipefail
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          curl -fsSL "https://github.com/hassanabozainab2-pixel/janb-baytak/releases/download/v2.2.173/janb-baytak.apk" -o "$RUNNER_TEMP/previous.apk"
+          "$APKSIGNER" verify --print-certs "$RUNNER_TEMP/previous.apk" > "$RUNNER_TEMP/previous-cert.txt"
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk > "$RUNNER_TEMP/current-cert.txt"
+          PREVIOUS="$(grep -m1 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/previous-cert.txt" | sed 's/.*: //')"
+          CURRENT="$(grep -m1 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/current-cert.txt" | sed 's/.*: //')"
+          echo "Previous release certificate SHA-256: $PREVIOUS"
+          echo "Current build certificate SHA-256: $CURRENT"
+          if [ -z "$PREVIOUS" ] || [ -z "$CURRENT" ]; then
+            echo "Could not extract signing certificate fingerprints"
+            exit 1
+          elif [ "$PREVIOUS" = "$CURRENT" ]; then
+            echo "SIGNATURE_MATCH=YES"
+          else
+            echo "SIGNATURE_MATCH=NO"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: janb-baytak-debug-apk
