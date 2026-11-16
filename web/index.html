@@ -612,12 +612,14 @@ async function openAdminPage(){
 
  const adminAnalyticsPanel=document.createElement('section');adminAnalyticsPanel.className='panel';
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
- $('adminContent').appendChild(adminAnalyticsPanel);
+ $('adminContent').prepend(adminAnalyticsPanel);
  const loadAdminAnalytics=async()=>{
   const range=$('adminAnalyticsRange'),status=$('adminAnalyticsStatus'),summary=$('adminAnalyticsSummary'),rows=$('adminAnalyticsRows');
   if(!range||!status||!summary||!rows)return;
   status.textContent='جاري تحميل إحصائيات المدير...';rows.innerHTML='';
-  const {data,error}=await sb.rpc('admin_activity_analytics',{p_days:range.value==='all'?null:Number(range.value)});
+  let data,error;
+  try{({data,error}=await sb.rpc('admin_activity_analytics',{p_days:range.value==='all'?null:Number(range.value)}))}
+  catch(err){summary.innerHTML='';status.textContent='تعذر الاتصال بإحصائيات المدير: '+(err?.message||'حاول مرة أخرى');return}
   if(error){summary.innerHTML='';status.textContent='تعذر تحميل إحصائيات المدير: '+error.message;return}
   const list=data||[],totals=list.reduce((a,x)=>({views:a.views+Number(x.views||0),calls:a.calls+Number(x.calls||0),whatsapp:a.whatsapp+Number(x.whatsapp||0)}),{views:0,calls:0,whatsapp:0});
   summary.innerHTML='<div class="admin-item"><b>'+totals.views+'</b><p>إجمالي المشاهدات</p></div><div class="admin-item"><b>'+totals.calls+'</b><p>ضغطات الاتصال</p></div><div class="admin-item"><b>'+totals.whatsapp+'</b><p>ضغطات واتساب</p></div><div class="admin-item"><b>'+list.length+'</b><p>عدد الأنشطة والأطباء</p></div>';
