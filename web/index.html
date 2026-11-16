@@ -595,7 +595,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111601;
+const JANB_CLOUD_VERSION=2026111602;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 async function checkJanbCloudUpdate(){
