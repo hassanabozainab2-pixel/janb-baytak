@@ -1,0 +1,36 @@
+name: Web app syntax check
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-check.yml'
+jobs:
+  check-inline-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class Scripts(HTMLParser):
+              def __init__(self): super().__init__(); self.inside=False; self.parts=[]; self.current=[]
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower()=='script':
+                      self.inside=True; self.current=[]
+              def handle_endtag(self, tag):
+                  if tag.lower()=='script' and self.inside:
+                      self.parts.append(''.join(self.current)); self.inside=False
+              def handle_data(self, data):
+                  if self.inside: self.current.append(data)
+          p=Scripts(); p.feed(Path('web/index.html').read_text(encoding='utf-8'))
+          inline=[x for x in p.parts if x.strip()]
+          Path('/tmp/janb-inline.js').write_text('\n;\n'.join(inline),encoding='utf-8')
+          print(f'Found {len(inline)} inline script block(s)')
+          PY
+          node --check /tmp/janb-inline.js
