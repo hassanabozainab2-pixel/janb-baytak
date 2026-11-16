@@ -661,11 +661,12 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
 </script>
 
 <script>
-/* جنب بيتك PWA: install prompt + safe shell caching. */
+/* جنب بيتك PWA: one-tap native install where the browser supports it. */
 (function(){
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   let deferredPrompt = null;
   let installButton = null;
+  let installing = false;
   function showInstallButton(){
     if(isStandalone || installButton || !document.body) return;
     installButton=document.createElement('button');
@@ -674,21 +675,43 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
     installButton.setAttribute('aria-label','تثبيت تطبيق جنب بيتك');
     installButton.style.cssText='position:fixed;z-index:99999;bottom:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 28px);white-space:nowrap;border:0;border-radius:28px;padding:13px 20px;background:#126b4d;color:white;font:800 14px system-ui;box-shadow:0 5px 22px #0003';
     installButton.addEventListener('click',async()=>{
+      if(installing)return;
       if(deferredPrompt){
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt=null;
-        installButton?.remove();installButton=null;
+        installing=true;
+        installButton.disabled=true;
+        installButton.textContent='جاري فتح التثبيت...';
+        try{
+          const promptEvent=deferredPrompt;
+          deferredPrompt=null;
+          await promptEvent.prompt();
+          const choice=await promptEvent.userChoice;
+          if(choice && choice.outcome==='accepted'){
+            installButton.textContent='تم طلب تثبيت جنب بيتك';
+          }else{
+            installButton.disabled=false;
+            installButton.textContent='⬇ حاول تثبيت جنب بيتك مرة أخرى';
+          }
+        }catch(error){
+          console.warn('PWA install prompt failed:',error);
+          installButton.disabled=false;
+          installButton.textContent='⬇ حاول تثبيت جنب بيتك مرة أخرى';
+        }finally{installing=false;}
       }else{
-        alert('من قائمة المتصفح ⋮ اختار «إضافة إلى الشاشة الرئيسية» أو «تثبيت التطبيق» لو الخيار متاح.');
+        alert('التثبيت المباشر غير متاح من المتصفح الحالي. افتح القائمة ⋮ ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».');
       }
     });
     document.body.appendChild(installButton);
   }
   window.addEventListener('beforeinstallprompt',event=>{
-    event.preventDefault();deferredPrompt=event;showInstallButton();
+    event.preventDefault();
+    deferredPrompt=event;
+    showInstallButton();
   });
-  window.addEventListener('appinstalled',()=>{installButton?.remove();installButton=null;});
+  window.addEventListener('appinstalled',()=>{
+    installButton?.remove();
+    installButton=null;
+    deferredPrompt=null;
+  });
   if(!isStandalone) window.addEventListener('load',showInstallButton,{once:true});
   if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
     window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.warn('PWA service worker registration failed',error)),{once:true});
