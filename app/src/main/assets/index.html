@@ -424,16 +424,18 @@ $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refresh
 startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.error('Janb auth restore failed:',e);const a=$('accountState');if(a)a.textContent='تعذر التحقق من جلسة الدخول؛ يمكنك تصفح التطبيق وإعادة المحاولة.';});
 </script>
 
+<footer id="siteFooter" style="margin:28px 0 16px;padding:18px 12px;text-align:center;color:#126b4d;font-weight:900;font-size:16px;border-top:1px solid #e7eee9;background:#fff;">
+  جنب بيتك
+</footer>
 <script>
-(function removeStrayFooterMarkers(){
-  const slash=String.fromCharCode(92);
-  const marker='n'+slash+'n'+slash+'n'+slash;
+(function cleanStrayTextAtBottom(){
+  const bad = /^\s*n(?:\s*\\\s*n){2}\s*\\?\s*$/;
   function clean(){
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     const nodes=[];
     while(walker.nextNode()) nodes.push(walker.currentNode);
     for(const node of nodes){
-      if((node.nodeValue||'').trim()===marker) node.parentNode?.removeChild(node);
+      if(bad.test(node.nodeValue||'')) node.parentNode?.removeChild(node);
     }
   }
   clean();
