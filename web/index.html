@@ -750,7 +750,7 @@ async function openSubscriptionPaymentDetails(id){
  };
  const approve=overlay.querySelector('#approveSubscriptionFromDetails');
  const reject=overlay.querySelector('#rejectSubscriptionFromDetails');
- if(approve)approve.onclick=async()=>{if(!confirm('تأكيد مراجعة التحويل وتفعيل النشاط لمدة الباقة؟'))return;approve.disabled=true;await reviewSubscriptionPayment(id,true);close()};
+ if(approve)approve.onclick=async()=>{if(!confirm('تأكيد مراجعة التحويل وتفعيل النشاط لمدة الباقة؟'))return;approve.disabled=true;const ok=await reviewSubscriptionPayment(id,true);approve.disabled=false;if(ok)close()};
  if(reject)reject.onclick=async()=>{if(!confirm('تأكيد رفض طلب الاشتراك؟'))return;reject.disabled=true;await reviewSubscriptionPayment(id,false);close()};
 }
 
@@ -761,37 +761,44 @@ async function viewPaymentReceipt(path){
  if(win)win.location.href=data.signedUrl;else alert('تعذر فتح نافذة الإيصال. اسمح بفتح النوافذ المنبثقة ثم حاول مرة أخرى.');
 }
 async function reviewSubscriptionPayment(id,approve){
- const {data:p,error}=await sb.from('subscription_payment_requests').select('*').eq('id',id).single();
- if(error)return alert(error.message);if(p.status!=='pending')return alert('تمت مراجعة هذا الطلب من قبل.');
- const now=new Date();
- if(!approve){
-  const r=await sb.from('subscription_payment_requests').update({status:'rejected',reviewed_at:now.toISOString(),reviewed_by:currentUser.id}).eq('id',id).eq('status','pending');
-  if(r.error)return alert(r.error.message);
-  if(p.doctor_id){const d=await sb.from('doctors').update({is_active:false}).eq('id',p.doctor_id);if(d.error)return alert(d.error.message)}
-  alert('تم رفض طلب الاشتراك.');await openAdminPage();return;
- }
- const days=({self_managed_yearly:365,marketing_agent_yearly:365})[p.plan_code];
- const name=({self_managed_yearly:'الإدارة الذاتية السنوية',marketing_agent_yearly:'جنب بيتك وكيلك التسويقي السنوية'})[p.plan_code];
- if(!days)return alert('نوع الباقة غير معروف.');
- if(!p.receipt_path||!p.transaction_reference)return alert('لا يمكن اعتماد الدفع قبل وجود رقم العملية وصورة الإيصال.');
- const end=new Date(now.getTime()+days*86400000);
- let existingQuery=sb.from('subscriptions').select('id');
- existingQuery=p.doctor_id?existingQuery.eq('doctor_id',p.doctor_id):existingQuery.eq('business_id',p.business_id);
- const existing=await existingQuery.maybeSingle();if(existing.error)return alert(existing.error.message);
- const subPayload={business_id:p.business_id||null,doctor_id:p.doctor_id||null,owner_id:p.owner_id,plan_name:name,starts_at:now.toISOString(),ends_at:end.toISOString(),status:'active'};
- const sub=existing.data?await sb.from('subscriptions').update(subPayload).eq('id',existing.data.id):await sb.from('subscriptions').insert(subPayload);
- if(sub.error)return alert('تعذر تفعيل الاشتراك: '+sub.error.message);
- if(p.doctor_id){
-  const d=await sb.from('doctors').update({is_active:true,subscription_expires_at:end.toISOString()}).eq('id',p.doctor_id);
-  if(d.error)return alert('تم تسجيل الاشتراك لكن تعذر إظهار الطبيب: '+d.error.message);
- }else{
-  const b=await sb.from('businesses').update({status:'approved',is_active:true,subscription_expires_at:end.toISOString()}).eq('id',p.business_id);
-  if(b.error)return alert('تم تسجيل الاشتراك لكن تعذر اعتماد النشاط: '+b.error.message);
- }
- const paid=await sb.from('subscription_payment_requests').update({status:'approved',reviewed_at:now.toISOString(),reviewed_by:currentUser.id}).eq('id',id).eq('status','pending');
- if(paid.error)return alert('تعذر تحديث حالة طلب الدفع: '+paid.error.message);
- alert('تم اعتماد الدفع وتفعيل '+(p.doctor_id?'ملف الطبيب':'النشاط')+' لمدة سنة كاملة.');
- await openAdminPage();await loadAll();
+ try{
+  const {data:p,error}=await sb.from('subscription_payment_requests').select('*').eq('id',id).single();
+  if(error){alert(error.message);return false}
+  if(p.status!=='pending'){alert('تمت مراجعة هذا الطلب من قبل.');return false}
+  const now=new Date();
+  if(!approve){
+   const r=await sb.from('subscription_payment_requests').update({status:'rejected',reviewed_at:now.toISOString(),reviewed_by:currentUser.id}).eq('id',id).eq('status','pending').select('id').maybeSingle();
+   if(r.error){alert(r.error.message);return false}
+   if(!r.data){alert('لم يتغير الطلب؛ ربما تمت مراجعته من جهاز آخر.');return false}
+   if(p.doctor_id){const d=await sb.from('doctors').update({is_active:false}).eq('id',p.doctor_id);if(d.error){alert(d.error.message);return false}}
+   alert('تم رفض طلب الاشتراك.');await openAdminPage();return true;
+  }
+  const days=({self_managed_yearly:365,marketing_agent_yearly:365})[p.plan_code];
+  const name=({self_managed_yearly:'الإدارة الذاتية السنوية',marketing_agent_yearly:'جنب بيتك وكيلك التسويقي السنوية'})[p.plan_code];
+  if(!days){alert('نوع الباقة غير معروف.');return false}
+  if(!p.receipt_path||!p.transaction_reference||p.transaction_reference==='TEST-HALLAWY-NOT-PAID-20261117'){
+   alert('لا يمكن اعتماد الدفع قبل حفظ رقم التحويل الحقيقي وصورة الإيصال.');return false
+  }
+  const end=new Date(now.getTime()+days*86400000);
+  let existingQuery=sb.from('subscriptions').select('id');
+  existingQuery=p.doctor_id?existingQuery.eq('doctor_id',p.doctor_id):existingQuery.eq('business_id',p.business_id);
+  const existing=await existingQuery.maybeSingle();if(existing.error){alert(existing.error.message);return false}
+  const subPayload={business_id:p.business_id||null,doctor_id:p.doctor_id||null,owner_id:p.owner_id,plan_name:name,starts_at:now.toISOString(),ends_at:end.toISOString(),status:'active'};
+  const sub=existing.data?await sb.from('subscriptions').update(subPayload).eq('id',existing.data.id):await sb.from('subscriptions').insert(subPayload);
+  if(sub.error){alert('تعذر تفعيل الاشتراك: '+sub.error.message);return false}
+  if(p.doctor_id){
+   const d=await sb.from('doctors').update({is_active:true,subscription_expires_at:end.toISOString()}).eq('id',p.doctor_id);
+   if(d.error){alert('تعذر إظهار الطبيب: '+d.error.message);return false}
+  }else{
+   const b=await sb.from('businesses').update({status:'approved',is_active:true,subscription_expires_at:end.toISOString()}).eq('id',p.business_id);
+   if(b.error){alert('تعذر اعتماد النشاط: '+b.error.message);return false}
+  }
+  const paid=await sb.from('subscription_payment_requests').update({status:'approved',reviewed_at:now.toISOString(),reviewed_by:currentUser.id}).eq('id',id).eq('status','pending').select('id').maybeSingle();
+  if(paid.error){alert('تعذر تحديث حالة طلب الدفع: '+paid.error.message);return false}
+  if(!paid.data){alert('تم تحديث النشاط لكن الطلب لم يتغير؛ راجع الإدارة قبل إعادة المحاولة.');return false}
+  alert('تم اعتماد الدفع وتفعيل '+(p.doctor_id?'ملف الطبيب':'النشاط')+' لمدة سنة كاملة.');
+  await openAdminPage();await loadAll();return true;
+ }catch(err){alert('تعذر إكمال مراجعة الطلب: '+(err?.message||'خطأ غير معروف'));return false}
 }
 async function adminEditContent(table,id){
  const allowed=['products','services','offers'];if(!allowed.includes(table))return alert('نوع المحتوى غير مسموح.');
