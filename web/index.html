@@ -3,7 +3,12 @@
 <!-- isolated admin dashboard APK build -->
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#126b4d"><meta name="description" content="جنب بيتك — المحلات والمنتجات والخدمات في مكان واحد"><title>جنب بيتك</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#126b4d"><link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./pwa-icon.svg" type="image/svg+xml">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="جنب بيتك">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="جنب بيتك — المحلات والمنتجات والخدمات في مكان واحد"><title>جنب بيتك</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
 <script>
 /* CDN recovery: keep the app interactive if the pinned Supabase CDN is unavailable. */
@@ -655,4 +660,39 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
 })();
 </script>
 
+<script>
+/* جنب بيتك PWA: install prompt + safe shell caching. */
+(function(){
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  let deferredPrompt = null;
+  let installButton = null;
+  function showInstallButton(){
+    if(isStandalone || installButton || !document.body) return;
+    installButton=document.createElement('button');
+    installButton.type='button';
+    installButton.textContent='⬇ ثبّت جنب بيتك على موبايلك';
+    installButton.setAttribute('aria-label','تثبيت تطبيق جنب بيتك');
+    installButton.style.cssText='position:fixed;z-index:99999;bottom:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 28px);white-space:nowrap;border:0;border-radius:28px;padding:13px 20px;background:#126b4d;color:white;font:800 14px system-ui;box-shadow:0 5px 22px #0003';
+    installButton.addEventListener('click',async()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt=null;
+        installButton?.remove();installButton=null;
+      }else{
+        alert('من قائمة المتصفح ⋮ اختار «إضافة إلى الشاشة الرئيسية» أو «تثبيت التطبيق» لو الخيار متاح.');
+      }
+    });
+    document.body.appendChild(installButton);
+  }
+  window.addEventListener('beforeinstallprompt',event=>{
+    event.preventDefault();deferredPrompt=event;showInstallButton();
+  });
+  window.addEventListener('appinstalled',()=>{installButton?.remove();installButton=null;});
+  if(!isStandalone) window.addEventListener('load',showInstallButton,{once:true});
+  if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.warn('PWA service worker registration failed',error)),{once:true});
+  }
+})();
+</script>
 </body></html>
