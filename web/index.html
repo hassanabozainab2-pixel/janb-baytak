@@ -30,7 +30,7 @@ main{max-width:760px;margin:auto;padding:17px 15px 90px}.section-head{display:fl
 .home-section-toggle[aria-expanded="true"] .section-chevron{transform:rotate(180deg)}
 .home-section-content[hidden]{display:none!important}
 
-.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.cat{position:relative;overflow:hidden;background:linear-gradient(145deg,#fff,#f1f8f4);border:1px solid #dcebe2;border-radius:18px;padding:16px 8px;text-align:center;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 12px #164d3210;transition:transform .18s,box-shadow .18s,border-color .18s}.cat:active{transform:scale(.96)}.cat:hover{border-color:#8fc5a8;box-shadow:0 8px 18px #164d3220}.cat span{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 9px;border-radius:15px;background:linear-gradient(145deg,#e4f4e9,#fff);font-size:27px;box-shadow:inset 0 0 0 1px #d5eadc}
+.categories{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.cat{padding:9px 7px;min-height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}.cat-photo{display:block;width:100%;height:78px;object-fit:cover;border-radius:12px;background:#e7eee9}.cat-photo-fallback{width:100%;height:78px;place-items:center;border-radius:12px;background:#e8f4ee;font-size:25px}.cat span:not(.cat-photo-fallback){display:none!important}.cat{position:relative;overflow:hidden;background:linear-gradient(145deg,#fff,#f1f8f4);border:1px solid #dcebe2;border-radius:18px;padding:16px 8px;text-align:center;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 12px #164d3210;transition:transform .18s,box-shadow .18s,border-color .18s}.cat:active{transform:scale(.96)}.cat:hover{border-color:#8fc5a8;box-shadow:0 8px 18px #164d3220}.cat span{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 9px;border-radius:15px;background:linear-gradient(145deg,#e4f4e9,#fff);font-size:27px;box-shadow:inset 0 0 0 1px #d5eadc}
 .toolbar{display:flex;gap:8px;overflow:auto;padding:2px 0 10px}.filter{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:20px;padding:8px 13px;font-size:12px}.filter.active{background:var(--green);color:white;border-color:var(--green)}
 .cards{display:grid;gap:12px}.ad-card{position:relative;overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;border:1px solid #ead9a8;border-radius:19px;padding:13px;display:flex;gap:13px;align-items:center;background:linear-gradient(115deg,#fffdf5 0%,#fff 55%,#fff8e5 100%);box-shadow:0 5px 16px #7b5b1712}.ad-card:before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#e2b64f,#f5d98d)}.ad-card:active{transform:scale(.985)}.ad-card:hover{box-shadow:0 9px 22px #7b5b1725;transform:translateY(-1px)}.ad-card img,.ad-card video{width:94px;height:94px;flex:0 0 94px;object-fit:cover;border-radius:15px;background:#eee;box-shadow:0 3px 10px #00000018}.ad-card video{object-fit:cover;cursor:pointer}.ad-card h3{margin:0 0 6px;font-size:16px;font-weight:850;color:#3a3019}.ad-slot{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:#89651b;background:#fff0c5;border-radius:20px;padding:4px 9px;margin-bottom:7px}.ad-card .smallnote{margin-top:7px;color:#8a7650}.listing{background:white;border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;gap:12px;align-items:flex-start}.avatar{width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:var(--green2);display:grid;place-items:center;font-size:24px}.listing h3{font-size:15px;margin:0 0 4px}.listing p{margin:0 0 8px;font-size:12px;color:var(--muted)}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions a,.actions button{font:inherit;text-decoration:none;border:0;border-radius:9px;padding:7px 10px;font-size:12px;background:var(--green2);color:var(--green);font-weight:700}.empty{background:white;border:1px dashed #cbd7d0;padding:22px;border-radius:15px;text-align:center;color:var(--muted);font-size:13px}
 .fab{position:fixed;bottom:18px;left:16px;background:var(--gold);color:#2b2619;border:0;border-radius:30px;padding:14px 19px;font-weight:850;box-shadow:0 6px 22px #0002}
@@ -232,10 +232,29 @@ async function loadAll(){
   const id=new URLSearchParams(location.search).get('business');if(id)openBusinessPage(id);
  }catch(e){$('connectionStatus').textContent='تعذر تحميل بيانات السحابة';$('latestBusinesses').innerHTML='<div class="empty">تعذر تحميل البيانات: '+esc(e.message||'انتهت مهلة الاتصال')+'</div>';$('businessCount').textContent='تعذر التحميل';console.error('Janb loadAll failed:',e);await loadFeaturedAds();}
 }
+
+/* Real category photos from Pexels. These are generic illustrative photos, not photos of Esna businesses. */
+function categoryPhoto(c){
+ const slug=String(c&&c.slug||'').toLowerCase(), name=String(c&&c.name||'').toLowerCase();
+ const bySlug={'doctors-clinics':'16571743','pharmacies':'16571743','pharmacy-store':'16571743','medical-supplies':'6899553','shops':'18356313','shop-electrical':'18356313','shop-mobiles':'18356313','shop-grocery':'18356313','shop-clothing':'18356313','shop-beauty':'6899553','shop-home':'18356313','shop-furniture':'18356313','shop-gold-gifts':'18356313','food-drink':'12770193','food-restaurants':'16985134','food-cafes':'12770193','food-sweets':'16985134','events-beauty-photo':'16571743','event-halls':'16985134','event-hairdressers':'6899553','event-beauty-centers':'6899553','event-studios':'12770193','event-bridal':'6899553'};
+ let id=bySlug[slug];
+ if(!id){
+  if(['صيدل','دواء','طب','عياد','دكتور','تحاليل','أسنان','عظام','قلب','أطفال','جلدية'].some(k=>name.includes(k)))id='16571743';
+  else if(['كوافير','تجميل','عطور','مكياج','عرائس'].some(k=>name.includes(k)))id='6899553';
+  else if(['مطعم','حلويات','مخبوز','مخبز'].some(k=>name.includes(k)))id='16985134';
+  else if(['كافيه','استوديو','تصوير'].some(k=>name.includes(k)))id='12770193';
+  else id='18356313';
+ }
+ return 'https://images.pexels.com/photos/'+id+'/pexels-photo-'+id+'.jpeg?auto=compress&cs=tinysrgb&w=640';
+}
+function categoryPhotoMarkup(c){
+ return '<img class="cat-photo" src="'+categoryPhoto(c)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><span class="cat-photo-fallback" style="display:none">'+(c.icon||'•')+'</span>';
+}
+
 function renderHome(){
  $('businessCount').textContent=businesses.length+' نشاط';
  const roots=categories.filter(c=>!c.parent_id).sort((a,b)=>a.sort_order-b.sort_order);
- $('categories').innerHTML=roots.map(c=>'<button class="cat" data-slug="'+esc(c.slug)+'"><span>'+(c.icon||'📌')+'</span>'+esc(c.name)+'</button>').join('');
+ $('categories').innerHTML=roots.map(c=>'<button class="cat" data-slug="'+esc(c.slug)+'">'+categoryPhotoMarkup(c)+'<span>'+esc(c.name)+'</span></button>').join('');
  $('latestBusinesses').innerHTML=businesses.length?businesses.slice(0,8).map(businessCard).join(''):'<div class="empty">لسه مفيش أنشطة منشورة في الأقسام. أضف نشاطك وابدأ.</div>';
  $('latestProducts').innerHTML=products.length?products.slice(0,6).map(p=>productRow(p,true)).join(''):'<div class="empty">المنتجات هتظهر هنا بعد ما أصحاب المحلات يضيفوها.</div>';
  $('latestOffers').innerHTML=offers.length?offers.slice(0,6).map(o=>{const b=o.businesses||{};return '<article class="listing" onclick="openBusinessPage(\''+o.business_id+'\')"><div class="avatar">🏷️</div><div style="min-width:0;flex:1"><h3>'+esc(o.title)+'</h3><p>'+esc(o.description||'')+'</p><div class="muted">'+esc(b.name||'')+'</div>'+(o.discount_percent?'<span class="pill-tag">خصم '+esc(o.discount_percent)+'%</span>':'')+'</div></article>'}).join(''):'<div class="empty">مفيش عروض منشورة حاليًا.</div>';
@@ -251,7 +270,7 @@ function openCategory(slug){
  const children=categories.filter(x=>x.parent_id===c.id).sort((a,b)=>a.sort_order-b.sort_order);
  $('categoryTitle').textContent=c.name;
  if(children.length){
-  $('categoryListings').innerHTML='<div class="categories">'+children.map(x=>'<button class="cat" data-child-category="'+x.id+'"><span>'+(x.icon||'📌')+'</span>'+esc(x.name)+'</button>').join('')+'</div>';
+  $('categoryListings').innerHTML='<div class="categories">'+children.map(x=>'<button class="cat" data-child-category="'+x.id+'">'+categoryPhotoMarkup(x)+'<span>'+esc(x.name)+'</span></button>').join('')+'</div>';
   $('categoryListings').querySelectorAll('[data-child-category]').forEach(btn=>btn.addEventListener('click',()=>openSubcategory(btn.dataset.childCategory)));
  }else{
   const rows=businesses.filter(b=>b.category_id===c.id);
@@ -272,7 +291,7 @@ async function openDoctorsDirectory(){
  const {data,error}=await sb.from('doctor_specialties').select('id,name,slug,icon,sort_order').eq('is_active',true).order('sort_order');
  if(error){$('doctorSpecialties').innerHTML='<div class="empty">تعذر تحميل التخصصات حاليًا.</div>';return}
  const rows=data||[];
- $('doctorSpecialties').innerHTML=rows.map(x=>'<button class="cat" data-specialty="'+x.id+'"><span>'+(x.icon||'🩺')+'</span>'+esc(x.name)+'</button>').join('');
+ $('doctorSpecialties').innerHTML=rows.map(x=>'<button class="cat" data-specialty="'+x.id+'">'+categoryPhotoMarkup(x)+'<span>'+esc(x.name)+'</span></button>').join('');
  $('doctorSpecialties').querySelectorAll('[data-specialty]').forEach(btn=>btn.addEventListener('click',()=>loadDoctorsBySpecialty(btn.dataset.specialty,rows.find(x=>x.id===btn.dataset.specialty)?.name||'التخصص')));
 }
 async function loadDoctorsBySpecialty(id,name){
