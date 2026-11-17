@@ -194,6 +194,26 @@ body{padding-bottom:72px}
 <div class="modal" id="productModal"><div class="sheet"><button class="close" onclick="closeModal('productModal')">إغلاق ✕</button><div id="productModalBody"></div></div></div>
 <div class="modal" id="cartModal"><div class="sheet"><button class="close" onclick="closeModal('cartModal')">إغلاق ✕</button><h2>سلة مشترياتك</h2><div id="cartLines" class="cart-list"></div><div id="cartSummary" class="panel"></div><div class="smallnote" style="margin-top:12px">لو في السلة منتجات من أكتر من محل، ابعت طلب كل محل من الزر الموجود تحت مجموعته.</div></div></div>
 
+<script>
+/* Capture the FIRST startup exception before the large application script runs. */
+window.__JANB_EARLY_ERRORS = window.__JANB_EARLY_ERRORS || [];
+(function(){
+  function record(kind,message,source,line,column){
+    const item={kind,message:String(message||'خطأ غير معروف'),source:source||'',line:line||0,column:column||0,time:new Date().toISOString()};
+    window.__JANB_EARLY_ERRORS.push(item);
+    if(window.__JANB_EARLY_ERRORS.length>8)window.__JANB_EARLY_ERRORS.shift();
+    console.error('[Janb early startup diagnostic]',item);
+    const status=document.getElementById('connectionStatus');
+    if(status)status.textContent='خطأ تشغيل التطبيق: '+item.message+(item.line?' · سطر '+item.line:'');
+  }
+  window.addEventListener('error',function(e){
+    record('error',e.message||e.error?.message||'تعذر تحميل ملف JavaScript',e.filename,e.lineno,e.colno);
+  },true);
+  window.addEventListener('unhandledrejection',function(e){
+    record('unhandledrejection',e.reason?.stack||e.reason?.message||e.reason,'',0,0);
+  });
+})();
+</script>
 <!-- Web startup diagnostic build: 2026-11-16 -->
 <script>
 const SUPABASE_URL='https://ijmeliyhdilfkveotadr.supabase.co';
@@ -953,7 +973,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111809;
+const JANB_CLOUD_VERSION=2026111810;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
@@ -1156,7 +1176,7 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
  if(!r.ok){const d=(await r.text()).slice(0,150);throw new Error('رد السحابة '+r.status+(d?' · '+d:''))}
  if(status)status.textContent='السحابة متصلة · جاري إعادة تحميل بيانات التطبيق';
  if(ads)ads.innerHTML='<div class="empty">الاتصال بالسحابة سليم؛ جاري فحص تشغيل واجهة التطبيق.</div>';
- if(typeof window.refreshCloudData==='function'){try{await window.refreshCloudData(false)}catch(e){if(status)status.textContent='السحابة متصلة لكن تحميل الواجهة فشل: '+(e.message||e)}}else if(status)status.textContent='السحابة متصلة، لكن سكربت التطبيق الرئيسي لم يكتمل تشغيله.';
+ if(typeof window.refreshCloudData==='function'){try{await window.refreshCloudData(false)}catch(e){if(status)status.textContent='السحابة متصلة لكن تحميل الواجهة فشل: '+(e.message||e)}}else if(status){const first=window.__JANB_EARLY_ERRORS&&window.__JANB_EARLY_ERRORS[0];status.textContent=first?('السحابة متصلة لكن التطبيق توقف: '+first.message+(first.line?' · سطر '+first.line:'')):'السحابة متصلة، لكن سكربت التطبيق الرئيسي لم يكتمل تشغيله.';}
  }catch(e){const m=e.name==='AbortError'?'انتهت مهلة الاتصال بعد 12 ثانية':(e.message||'تعذر الوصول للسحابة');if(status)status.textContent='فشل الاتصال: '+m;if(ads)ads.innerHTML='<div class="empty">تعذر الاتصال بالسحابة: '+m+'</div>'}
  finally{busy=false;if(btn){btn.disabled=false;btn.textContent='↻ فحص اتصال السحابة'}}
  }
