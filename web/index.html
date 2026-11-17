@@ -921,6 +921,8 @@ async function refreshCloudData(quiet=false){
  try{await loadAll();if(!quiet&&$('refreshStatus'))$('refreshStatus').textContent='تم تحديث البيانات من السحابة';}
  finally{janbCloudBusy=false;}
 }
+/* Expose the already-defined main refresh function to the independent recovery checker. */
+window.refreshCloudData=refreshCloudData;
 function scheduleJanbCloudRefresh(){
  if(janbCloudTimer)clearTimeout(janbCloudTimer);
  janbCloudTimer=setTimeout(()=>refreshCloudData(true),500);
@@ -951,7 +953,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111808;
+const JANB_CLOUD_VERSION=2026111809;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
