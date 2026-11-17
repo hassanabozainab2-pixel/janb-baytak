@@ -12,7 +12,7 @@ try {
   console.warn('Firebase Messaging could not initialize in the service worker:', error);
 }
 
-const CACHE_NAME = "janb-pwa-shell-v30";
+const CACHE_NAME = "janb-pwa-shell-v31";
 const APP_SHELL = ["./", "./manifest.json", "./pwa-icon-v2.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
