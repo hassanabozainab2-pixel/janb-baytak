@@ -835,6 +835,7 @@ async function reviewSubscriptionPayment(id,approve){
   const paid=await sb.from('subscription_payment_requests').update({status:'approved',reviewed_at:now.toISOString(),reviewed_by:currentUser.id}).eq('id',id).eq('status','pending').select('id').maybeSingle();
   if(paid.error){alert('تعذر تحديث حالة طلب الدفع: '+paid.error.message);return false}
   if(!paid.data){alert('تم تحديث النشاط لكن الطلب لم يتغير؛ راجع الإدارة قبل إعادة المحاولة.');return false}
+  if(!p.doctor_id)await notifyJanbPublishedContent('business',p.business_id);
   alert('تم اعتماد الدفع وتفعيل '+(p.doctor_id?'ملف الطبيب':'النشاط')+' لمدة سنة كاملة.');
   await openAdminPage();await loadAll();return true;
  }catch(err){alert('تعذر إكمال مراجعة الطلب: '+(err?.message||'خطأ غير معروف'));return false}
