@@ -1,0 +1,86 @@
+name: Preview-only validation
+
+on:
+  push:
+    branches:
+      - "preview/brand-link-test"
+    paths:
+      - "web/**"
+      - ".github/workflows/preview-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "janb-preview-check"
+  cancel-in-progress: true
+
+jobs:
+  validate-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: preview/brand-link-test
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate PWA manifest and brand-safe links
+        run: |
+          python3 -m json.tool web/manifest.json > /dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("web/manifest.json").read_text(encoding="utf-8"))
+          assert manifest.get("name") == "جنب بيتك", "PWA name is not branded"
+          assert manifest.get("short_name") == "جنب بيتك", "PWA short name is not branded"
+          assert manifest.get("start_url"), "Missing PWA start_url"
+          assert manifest.get("scope"), "Missing PWA scope"
+          print("PWA manifest: valid; app name: جنب بيتك")
+          PY
+          if grep -R -n "hassanabozainab2-pixel" web; then
+            echo "Personal GitHub login remains in public web files"
+            exit 1
+          fi
+
+      - name: Extract and syntax-check inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.inside = False
+                  self.parts = []
+                  self.current = []
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.inside = True
+                      self.current = []
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.inside:
+                      self.parts.append("".join(self.current))
+                      self.inside = False
+              def handle_data(self, data):
+                  if self.inside:
+                      self.current.append(data)
+          parser = Scripts()
+          parser.feed(Path("web/index.html").read_text(encoding="utf-8"))
+          inline = [part for part in parser.parts if part.strip()]
+          Path("/tmp/janb-preview-inline.js").write_text("\n;\n".join(inline), encoding="utf-8")
+          print(f"Found {len(inline)} inline script block(s)")
+          PY
+          node --check /tmp/janb-preview-inline.js
+
+      - name: Keep a downloadable preview build
+        uses: actions/upload-artifact@v4
+        with:
+          name: janb-baytak-preview-web
+          path: web/
+          retention-days: 7
