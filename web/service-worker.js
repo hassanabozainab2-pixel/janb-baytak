@@ -5,15 +5,15 @@ try {
   const janbMessaging=firebase.messaging();
   janbMessaging.onBackgroundMessage(payload=>{
    const title=payload.notification?.title||payload.data?.title||"جنب بيتك";
-   const options={body:payload.notification?.body||payload.data?.body||"في جديد على جنب بيتك",icon:"./pwa-icon.svg",badge:"./pwa-icon.svg",data:{url:payload.data?.url||"./"},tag:payload.data?.tag||"janb-update"};
+   const options={body:payload.notification?.body||payload.data?.body||"في جديد على جنب بيتك",icon:"./pwa-icon-v2.svg",badge:"./pwa-icon-v2.svg",data:{url:payload.data?.url||"./"},tag:payload.data?.tag||"janb-update"};
    self.registration.showNotification(title,options);
   });
 } catch (error) {
   console.warn('Firebase Messaging could not initialize in the service worker:', error);
 }
 
-const CACHE_NAME = "janb-pwa-shell-v19";
-const APP_SHELL = ["./", "./manifest.json", "./pwa-icon.svg"];
+const CACHE_NAME = "janb-pwa-shell-v20";
+const APP_SHELL = ["./", "./manifest.json", "./pwa-icon-v2.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
 });
