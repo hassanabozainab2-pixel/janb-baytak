@@ -951,7 +951,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111807;
+const JANB_CLOUD_VERSION=2026111808;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
@@ -1144,4 +1144,24 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
 
 
 
+<script>
+(function janbCloudRecoveryDiagnostic(){
+ const status=document.getElementById('connectionStatus'),ads=document.getElementById('featuredAds'),btn=document.getElementById('refreshAppBtn');
+ const api='https://ijmeliyhdilfkveotadr.supabase.co/rest/v1/categories?select=id&limit=1';
+ const key='sb_publishable_LGDX79mgcJIY58ioMTUf9Q_Lgea0b2z';let busy=false;
+ async function probe(){if(busy)return;busy=true;if(status)status.textContent='إسنا · بنختبر الاتصال بالسحابة...';if(btn){btn.disabled=true;btn.textContent='جاري فحص الاتصال...'}
+ try{const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);let r;try{r=await fetch(api,{headers:{apikey:key,Authorization:'Bearer '+key},cache:'no-store',signal:c.signal})}finally{clearTimeout(t)}
+ if(!r.ok){const d=(await r.text()).slice(0,150);throw new Error('رد السحابة '+r.status+(d?' · '+d:''))}
+ if(status)status.textContent='السحابة متصلة · جاري إعادة تحميل بيانات التطبيق';
+ if(ads)ads.innerHTML='<div class="empty">الاتصال بالسحابة سليم؛ جاري فحص تشغيل واجهة التطبيق.</div>';
+ if(typeof window.refreshCloudData==='function'){try{await window.refreshCloudData(false)}catch(e){if(status)status.textContent='السحابة متصلة لكن تحميل الواجهة فشل: '+(e.message||e)}}else if(status)status.textContent='السحابة متصلة، لكن سكربت التطبيق الرئيسي لم يكتمل تشغيله.';
+ }catch(e){const m=e.name==='AbortError'?'انتهت مهلة الاتصال بعد 12 ثانية':(e.message||'تعذر الوصول للسحابة');if(status)status.textContent='فشل الاتصال: '+m;if(ads)ads.innerHTML='<div class="empty">تعذر الاتصال بالسحابة: '+m+'</div>'}
+ finally{busy=false;if(btn){btn.disabled=false;btn.textContent='↻ فحص اتصال السحابة'}}
+ }
+ if(btn)btn.addEventListener('click',e=>{e.preventDefault();probe()});
+ window.addEventListener('error',e=>{if(status&&status.textContent.includes('جاري'))status.textContent='خطأ JavaScript: '+(e.message||'غير معروف')});
+ window.addEventListener('unhandledrejection',e=>{if(status&&status.textContent.includes('جاري'))status.textContent='خطأ تحميل: '+(e.reason?.message||e.reason||'غير معروف')});
+ setTimeout(()=>{if(status&&status.textContent.includes('جاري'))probe()},9000);
+})();
+</script>
 </body></html>
