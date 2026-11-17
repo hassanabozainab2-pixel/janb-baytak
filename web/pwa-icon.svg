@@ -1,6 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="112" fill="#126b4d"/>
-<path d="M256 74 91 211v214h124V302h82v123h124V211L256 74Z" fill="#f2cc68"/>
-<path d="m256 115 126 105v164h-48V260H178v124h-48V220L256 115Z" fill="#fff8df"/>
-<circle cx="256" cy="222" r="27" fill="#126b4d"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b573e"/><stop offset="1" stop-color="#16845d"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe39a"/><stop offset="1" stop-color="#dca938"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#052f22" flood-opacity=".35"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="211" r="151" fill="#ffffff" opacity=".055"/>
+  <path d="M256 53c-76 0-137 61-137 137 0 103 137 235 137 235s137-132 137-235c0-76-61-137-137-137Z" fill="url(#gold)" filter="url(#shadow)"/>
+  <path d="M256 82c-60 0-108 48-108 108 0 73 80 164 108 194 28-30 108-121 108-194 0-60-48-108-108-108Z" fill="#fffdf4"/>
+  <path d="m174 202 82-68 82 68v86H174Z" fill="#126b4d"/>
+  <path d="m158 204 98-81 98 81-17 20-81-67-81 67Z" fill="#e2b64f"/>
+  <rect x="239" y="225" width="35" height="63" rx="4" fill="#fff8df"/>
+  <rect x="190" y="218" width="35" height="32" rx="4" fill="#d7eadf"/>
+  <rect x="287" y="218" width="35" height="32" rx="4" fill="#d7eadf"/>
+  <path d="M205 294h102l-12 24h-77Z" fill="#e2b64f"/>
+  <g transform="translate(305 282)" fill="none" stroke="#126b4d" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0h15l12 53h57l13-38H22"/>
+    <circle cx="39" cy="68" r="7" fill="#126b4d"/><circle cx="77" cy="68" r="7" fill="#126b4d"/>
+  </g>
+  <path d="M92 421h328" stroke="#f7d77f" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+  <text x="256" y="466" text-anchor="middle" direction="rtl" font-family="Tahoma,Arial,sans-serif" font-size="38" font-weight="900" fill="#fff8df">جنب بيتك</text>
 </svg>
