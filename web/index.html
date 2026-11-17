@@ -731,8 +731,8 @@ async function openOwnerPage(){
  if(error){$('ownerBusinessList').innerHTML='<div class="empty">تعذر تحميل نشاطك: '+esc(janbFriendlyError(error))+'</div>';return}
  const businesses=rows||[];
  if(businesses.length===1){$('ownerBusinessList').innerHTML='';await manageBusiness(businesses[0].id);return}
- if(businesses.length>1){$('ownerBusinessList').innerHTML='<div class="panel"><h2>اختار نشاطك</h2><p class="smallnote">وجدنا أكثر من نشاط مرتبط بحسابك. اختر النشاط المطلوب إدارته.</p>'+businesses.map(b=>'<button class="submit" style="margin:8px 0" onclick="manageBusiness(\\''+b.id+'\\')">'+esc(b.name)+'</button>').join('')+'</div>';return}
- $('ownerBusinessList').innerHTML='<div class="panel"><h2>مرحبًا بك في إدارة نشاطك</h2><p class="smallnote">لا يوجد نشاط مسجل بهذا البريد الإلكتروني حتى الآن. يمكنك تسجيل نشاطك مرة واحدة فقط.</p><button class="submit" onclick="openModal(\\'businessModal\\')">إضافة نشاطي</button></div>';
+ if(businesses.length>1){$('ownerBusinessList').innerHTML='<div class="panel"><h2>اختار نشاطك</h2><p class="smallnote">وجدنا أكثر من نشاط مرتبط بحسابك. اختر النشاط المطلوب إدارته.</p>'+businesses.map(b=>'<button class="submit" style="margin:8px 0" onclick="manageBusiness(&quot;'+b.id+'&quot;)">'+esc(b.name)+'</button>').join('')+'</div>';return}
+ $('ownerBusinessList').innerHTML='<div class="panel"><h2>مرحبًا بك في إدارة نشاطك</h2><p class="smallnote">لا يوجد نشاط مسجل بهذا البريد الإلكتروني حتى الآن. يمكنك تسجيل نشاطك مرة واحدة فقط.</p><button class="submit" onclick="openModal(&quot;businessModal&quot;)">إضافة نشاطي</button></div>';
 }
 async function openDoctorOwnerAnalytics(id){
  if(!currentUser)return;
