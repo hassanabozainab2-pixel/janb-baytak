@@ -916,7 +916,7 @@ async function reviewBusiness(id,status){const {error}=await sb.from('businesses
 async function reviewAd(id,status){if(status==='active'){const check=await sb.from('ads').select('payment_status').eq('id',id).single();if(check.error)return alert(check.error.message);if(check.data.payment_status!=='approved')return alert('لا يمكن تفعيل الإعلان قبل مراجعة وتحقيق مبلغ 200 جنيه.')}const now=new Date(),end=new Date(now.getTime()+7*86400000);const {error}=await sb.from('ads').update({status,is_active:status==='active',starts_at:status==='active'?now.toISOString():null,ends_at:status==='active'?end.toISOString():null}).eq('id',id);if(error)alert('تعذر تحديث الإعلان: '+error.message);else{alert('تم تحديث حالة الإعلان.');await openAdminPage();await loadFeaturedAds()}}
 let janbCloudBusy=false,janbCloudTimer=null,janbRealtimeChannel=null,janbPollTimer=null;
 async function refreshCloudData(quiet=false){
- if(janbCloudBusy||!navigator.onLine)return;
+ if(janbCloudBusy)return;
  janbCloudBusy=true;
  try{await loadAll();if(!quiet&&$('refreshStatus'))$('refreshStatus').textContent='تم تحديث البيانات من السحابة';}
  finally{janbCloudBusy=false;}
@@ -945,12 +945,13 @@ function startJanbCloudSync(){
   }catch(e){console.warn('Janb realtime unavailable; polling remains enabled',e);}
  }
  if(!janbPollTimer)janbPollTimer=setInterval(()=>{if(document.visibilityState==='visible'&&navigator.onLine)refreshCloudData(true)},60000);
- window.addEventListener('online',()=>refreshCloudData(true));
+ window.addEventListener('offline',()=>{const s=$('connectionStatus');if(s)s.textContent='إسنا · لا يوجد اتصال بالإنترنت';});
+ window.addEventListener('online',()=>{const s=$('connectionStatus');if(s)s.textContent='إسنا · عاد الاتصال، جاري تحميل البيانات';refreshCloudData(true)});
  window.addEventListener('focus',()=>refreshCloudData(true));
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111806;
+const JANB_CLOUD_VERSION=2026111807;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
