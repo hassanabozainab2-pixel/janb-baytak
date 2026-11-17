@@ -671,8 +671,8 @@ $('businessForm').onsubmit=async e=>{
  const f=new FormData(e.target),name=String(f.get('name')||'').trim(),phone=String(f.get('phone')||'').trim(),status=$('businessFormStatus');
  const submit=e.target.querySelector('button[type="submit"]');
  let logoPath=null,businessId=null,createdSuccessfully=false;
- if(submit)submit.disabled=true;
- status.textContent='جاري تسجيل نشاطك ضمن شركاء التأسيس...';
+ if(submit){submit.disabled=true;submit.dataset.janbOriginalText=submit.textContent.trim();submit.innerHTML='<span class="janb-spinner" aria-hidden="true"></span> جاري التنفيذ...';}
+ status.textContent='جاري حفظ بيانات النشاط ورفع الصورة، برجاء الانتظار...';
  try{
   if(!name||!phone||!f.get('category_id'))throw new Error('اكتب اسم النشاط ورقم الهاتف واختر القسم.');
   const {count:ownedCount,error:ownedError}=await sb.from('businesses').select('id',{count:'exact',head:true}).eq('owner_id',currentUser.id);
@@ -711,9 +711,9 @@ $('businessForm').onsubmit=async e=>{
  }catch(err){
   if(businessId&&!createdSuccessfully)await sb.from('businesses').delete().eq('id',businessId).eq('owner_id',currentUser.id);
   if(logoPath)await sb.storage.from('janb-media').remove([logoPath]);
-  status.textContent='تعذر التسجيل: '+janbFriendlyError(err,'تعذر تسجيل النشاط. حاول مرة أخرى.');
+  status.textContent='تعذر التسجيل: '+janbFriendlyError(err,'تعذر تسجيل النشاط. حاول مرة أخرى.');showJanbToast(status.textContent,'error');
  }finally{
-  if(submit)submit.disabled=false;
+  if(submit){submit.disabled=false;if(submit.dataset.janbOriginalText){submit.textContent=submit.dataset.janbOriginalText;delete submit.dataset.janbOriginalText}}
  }
 };
 
@@ -1036,7 +1036,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111812;
+const JANB_CLOUD_VERSION=2026111813;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
