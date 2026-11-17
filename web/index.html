@@ -920,7 +920,7 @@ async function adminDeleteBusiness(id){
  await openAdminPage();
  await loadAll();
 }
-async function reviewBusiness(id,status){if(status==='approved'){const paid=await sb.from('subscription_payment_requests').select('id').eq('business_id',id).eq('status','approved').limit(1);if(paid.error)return alert(paid.error.message);if(!paid.data?.length)return alert('لا يمكن اعتماد النشاط قبل مراجعة الدفع واعتماد اشتراك مدفوع.')}const {error}=await sb.from('businesses').update({status}).eq('id',id);if(error)alert('تعذر تحديث النشاط: '+error.message);else{alert('تم تحديث حالة النشاط.');await openAdminPage();await loadAll()}}
+async function reviewBusiness(id,status){const {error}=await sb.from('businesses').update({status,is_active:status==='approved'}).eq('id',id);if(error)alert('تعذر تحديث النشاط: '+error.message);else{alert(status==='approved'?'تم اعتماد نشاط شريك التأسيس.':'تم تحديث حالة النشاط.');await openAdminPage();await loadAll()}}
 async function reviewAd(id,status){if(status==='active'){const check=await sb.from('ads').select('payment_status').eq('id',id).single();if(check.error)return alert(check.error.message);if(check.data.payment_status!=='approved')return alert('لا يمكن تفعيل الإعلان قبل مراجعة وتحقيق مبلغ 200 جنيه.')}const now=new Date(),end=new Date(now.getTime()+7*86400000);const {error}=await sb.from('ads').update({status,is_active:status==='active',starts_at:status==='active'?now.toISOString():null,ends_at:status==='active'?end.toISOString():null}).eq('id',id);if(error)alert('تعذر تحديث الإعلان: '+error.message);else{alert('تم تحديث حالة الإعلان.');await openAdminPage();await loadFeaturedAds()}}
 let janbCloudBusy=false,janbCloudTimer=null,janbRealtimeChannel=null,janbPollTimer=null;
 async function refreshCloudData(quiet=false){
