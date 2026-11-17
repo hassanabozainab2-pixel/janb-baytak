@@ -1,4 +1,14 @@
-const CACHE_NAME = "janb-pwa-shell-v16";
+importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/13.0.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({apiKey:"AIzaSyDSRsK2skCi9CV8941MyBdXWilaUREmxo0",authDomain:"janb-baytak.firebaseapp.com",projectId:"janb-baytak",storageBucket:"janb-baytak.firebasestorage.app",messagingSenderId:"304429669668",appId:"1:304429669668:web:3783fa65667c7998fce7b1",measurementId:"G-KFVZKL5KEP"});
+const janbMessaging=firebase.messaging();
+janbMessaging.onBackgroundMessage(payload=>{
+ const title=payload.notification?.title||payload.data?.title||"جنب بيتك";
+ const options={body:payload.notification?.body||payload.data?.body||"في جديد على جنب بيتك",icon:"./pwa-icon.svg",badge:"./pwa-icon.svg",data:{url:payload.data?.url||"./"},tag:payload.data?.tag||"janb-update"};
+ self.registration.showNotification(title,options);
+});
+
+const CACHE_NAME = "janb-pwa-shell-v17";
 const APP_SHELL = ["./", "./manifest.json", "./pwa-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -18,28 +28,6 @@ self.addEventListener("fetch", event => {
       return response;
     }).catch(() => caches.match("./")));
   }
-});
-
-// Web Push: display notifications delivered to installed PWA subscribers.
-self.addEventListener("push", event => {
-  let payload = {};
-  try {
-    payload = event.data ? event.data.json() : {};
-  } catch {
-    payload = { body: event.data ? event.data.text() : "" };
-  }
-
-  const title = String(payload.title || "جنب بيتك");
-  const options = {
-    body: String(payload.body || "في جديد على جنب بيتك"),
-    icon: "./pwa-icon.svg",
-    badge: "./pwa-icon.svg",
-    data: { url: payload.url || "./" },
-    tag: payload.tag || "janb-update",
-    renotify: Boolean(payload.renotify)
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", event => {
