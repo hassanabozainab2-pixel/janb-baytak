@@ -1,12 +1,16 @@
-importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/13.0.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({apiKey:"AIzaSyDSRsK2skCi9CV8941MyBdXWilaUREmxo0",authDomain:"janb-baytak.firebaseapp.com",projectId:"janb-baytak",storageBucket:"janb-baytak.firebasestorage.app",messagingSenderId:"304429669668",appId:"1:304429669668:web:3783fa65667c7998fce7b1",measurementId:"G-KFVZKL5KEP"});
-const janbMessaging=firebase.messaging();
-janbMessaging.onBackgroundMessage(payload=>{
- const title=payload.notification?.title||payload.data?.title||"جنب بيتك";
- const options={body:payload.notification?.body||payload.data?.body||"في جديد على جنب بيتك",icon:"./pwa-icon.svg",badge:"./pwa-icon.svg",data:{url:payload.data?.url||"./"},tag:payload.data?.tag||"janb-update"};
- self.registration.showNotification(title,options);
-});
+try {
+  importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/13.0.0/firebase-messaging-compat.js');
+  
+  firebase.initializeApp({apiKey:"AIzaSyDSRsK2skCi9CV8941MyBdXWilaUREmxo0",authDomain:"janb-baytak.firebaseapp.com",projectId:"janb-baytak",storageBucket:"janb-baytak.firebasestorage.app",messagingSenderId:"304429669668",appId:"1:304429669668:web:3783fa65667c7998fce7b1",measurementId:"G-KFVZKL5KEP"});
+  const janbMessaging=firebase.messaging();
+  janbMessaging.onBackgroundMessage(payload=>{
+   const title=payload.notification?.title||payload.data?.title||"جنب بيتك";
+   const options={body:payload.notification?.body||payload.data?.body||"في جديد على جنب بيتك",icon:"./pwa-icon.svg",badge:"./pwa-icon.svg",data:{url:payload.data?.url||"./"},tag:payload.data?.tag||"janb-update"};
+   self.registration.showNotification(title,options);
+  });
+} catch (error) {
+  console.warn('Firebase Messaging could not initialize in the service worker:', error);
+}
 
 const CACHE_NAME = "janb-pwa-shell-v17";
 const APP_SHELL = ["./", "./manifest.json", "./pwa-icon.svg"];
