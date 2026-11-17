@@ -1,4 +1,4 @@
-const CACHE_NAME = "janb-pwa-shell-v15";
+const CACHE_NAME = "janb-pwa-shell-v16";
 const APP_SHELL = ["./", "./manifest.json", "./pwa-icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -18,4 +18,49 @@ self.addEventListener("fetch", event => {
       return response;
     }).catch(() => caches.match("./")));
   }
+});
+
+// Web Push: display notifications delivered to installed PWA subscribers.
+self.addEventListener("push", event => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "" };
+  }
+
+  const title = String(payload.title || "جنب بيتك");
+  const options = {
+    body: String(payload.body || "في جديد على جنب بيتك"),
+    icon: "./pwa-icon.svg",
+    badge: "./pwa-icon.svg",
+    data: { url: payload.url || "./" },
+    tag: payload.tag || "janb-update",
+    renotify: Boolean(payload.renotify)
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const target = new URL(
+    event.notification.data?.url || "./",
+    self.location.origin
+  ).href;
+
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+    for (const client of windows) {
+      if (client.url.startsWith(self.location.origin) && "focus" in client) {
+        await client.focus();
+        if ("navigate" in client) await client.navigate(target);
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(target);
+  })());
 });
