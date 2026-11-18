@@ -1019,8 +1019,8 @@ async function openAdminPage(){
   const complete=index.scanComplete===true;
   if(!refs.length){
    return complete
-    ?{text:'⚪ غير مرتبط بسجل معروف — راجعه يدويًا قبل الحذف',current:false,protected:true}
-    :{text:'🟠 تعذر التأكد من كل مصادر الصور ('+index.failedTables.join('، ')+') — محمي من الحذف',current:false,protected:true};
+     ?{text:'⚪ غير مرتبط بسجل معروف — يمكنك مراجعته واتخاذ قرار الحذف',current:false,protected:false}
+     :{text:'🟠 تعذر التأكد من كل مصادر الصور ('+index.failedTables.join('، ')+') — راجع الارتباط يدويًا قبل اتخاذ قرار الحذف',current:false,protected:true};
   }
   const unique=[...new Map(refs.map(x=>[x.table+'|'+x.label+'|'+x.biz,x])).values()];
   const current=unique.some(x=>x.isCurrent);
@@ -1052,6 +1052,7 @@ async function openAdminPage(){
    box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+esc(v.usage.text)+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-video]').forEach(btn=>btn.onclick=async()=>{
     const v=videos[Number(btn.dataset.adminDeleteVideo)];if(!v)return;
+    if(v.usage.protected)return showJanbToast('الحذف متوقف لحماية الملف: '+v.usage.text,'error');
     if(!await janbConfirm('تأكيد حذف الفيديو نهائيًا وتحرير مساحته؟\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
@@ -1093,7 +1094,7 @@ async function openAdminPage(){
    box.querySelectorAll('[data-admin-delete-image]').forEach(btn=>btn.onclick=async()=>{
     const v=images[Number(btn.dataset.adminDeleteImage)];if(!v)return;
     const warning=v.usage.text||'تعذر تحديد ارتباط الصورة';
-    if(!await janbConfirm('قرار حذف نهائي بواسطة المدير. لن يحذف التطبيق أي صورة تلقائيًا.\\n\\nحالة ارتباط الصورة: '+warning+'\\n\\nقد يؤدي الحذف إلى اختفاء الصورة من النشاط أو المنتج أو العرض المرتبط بها.\\n\\nهل تؤكد حذف الملف من التخزين؟\\n'+v.name))return;
+    if(!await janbConfirm('قرار حذف نهائي بواسطة المدير. لن يحذف التطبيق أي صورة تلقائيًا.\n\nحالة ارتباط الصورة: '+warning+'\n\nقد يؤدي الحذف إلى اختفاء الصورة من النشاط أو المنتج أو العرض المرتبط بها.\n\nهل تؤكد حذف الملف من التخزين؟\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
     if(error){btn.disabled=false;btn.textContent='حذف الصورة نهائيًا';return showJanbToast('تعذر حذف الصورة: '+error.message,'error')}
