@@ -587,7 +587,7 @@ function openOffer(id){
  const wa=normPhone(b.whatsapp||'');
  const storeId=String(o.business_id||b.id||'').replace(/[^a-zA-Z0-9_-]/g,'');
  const offerId=String(o.id).replace(/[^a-zA-Z0-9_-]/g,'');
- const mediaUrl=o.media_path?sb.storage.from('janb-media').getPublicUrl(o.media_path).data.publicUrl:o.image_url;const image=o.media_type==='video'&&mediaUrl?'<video src="'+esc(mediaUrl)+'" controls playsinline preload="metadata" style="width:100%;max-height:320px;object-fit:contain;border-radius:16px;background:#111"></video>':janbImageUrls(o).length?janbImageGalleryMarkup(o,o.title):'<div class="product-placeholder" style="width:100%;height:140px">🏷️</div>';
+ const mediaUrl=o.media_path?janbMediaPublicUrl(o.media_path):o.image_url;const image=o.media_type==='video'&&mediaUrl?'<video src="'+esc(mediaUrl)+'" controls playsinline preload="metadata" style="width:100%;max-height:320px;object-fit:contain;border-radius:16px;background:#111"></video>':janbImageUrls(o).length?janbImageGalleryMarkup(o,o.title):'<div class="product-placeholder" style="width:100%;height:140px">🏷️</div>';
  const before=o.price_before!=null?money(o.price_before)+' جنيه':'غير محدد';
  const after=o.price_after!=null?money(o.price_after)+' جنيه':'السعر عند الطلب';
  const endDate=o.ends_at?'<p class="smallnote">ينتهي العرض: '+new Date(o.ends_at).toLocaleDateString('ar-EG')+'</p>':'';
