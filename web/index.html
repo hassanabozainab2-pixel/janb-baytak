@@ -429,7 +429,7 @@ async function refreshLatestOffers(){
  if(janbOffersBusy){janbOffersQueued=true;return;}
  janbOffersBusy=true;
  try{
-  const {data,error}=await janbWaitFor(sb.from('offers').select('id,business_id,title,description,discount_percent,starts_at,ends_at,image_url,image_urls,media_path,media_type,product_id,price_before,price_after,businesses(name,phone,whatsapp))').eq('is_active',true).order('created_at',{ascending:false}),'العروض',12000);
+  const {data,error}=await janbWaitFor(sb.from('offers').select('id,business_id,title,description,discount_percent,starts_at,ends_at,image_url,image_urls,media_path,media_type,product_id,price_before,price_after,businesses(name,phone,whatsapp)').eq('is_active',true).order('created_at',{ascending:false}),'العروض',12000);
   if(error)throw error;
   const visibleBusinessIds=new Set(businesses.map(b=>b.id));
   offers=(data||[]).filter(o=>visibleBusinessIds.has(o.business_id));
