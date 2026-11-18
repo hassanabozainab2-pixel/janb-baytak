@@ -1336,30 +1336,35 @@ async function adminDeleteAd(id){
 function openAdminBusiness(id){showScreen('ownerPage');$('ownerBusinessList').innerHTML='';const title=document.querySelector('#ownerPage .screen-title');if(title)title.textContent='إدارة النشاط';manageBusiness(id)}
 async function toggleAdminCategory(id,isActive){const {error}=await sb.from('categories').update({is_active:isActive}).eq('id',id);if(error)alert('تعذر تحديث القسم: '+error.message);else{await openAdminPage();await loadAll()}}
 async function adminDeleteOwner(userId){
- if(currentUser?.app_metadata?.role!=='admin')return alert('الحذف متاح للمدير فقط.');
+ if(currentUser?.app_metadata?.role!=='admin')return alert('هذه العملية متاحة لمدير التطبيق فقط.');
  const {data:profile,error:readError}=await sb.from('profiles').select('id,display_name,phone').eq('id',userId).maybeSingle();
- if(readError)return alert('تعذر قراءة بيانات الحساب: '+readError.message);
+ if(readError)return alert('تعذر التحقق من بيانات الحساب. حاول مرة أخرى.');
  if(!profile)return alert('حساب صاحب النشاط غير موجود.');
  const {data:owned,error:businessError}=await sb.from('businesses').select('id,name').eq('owner_id',userId);
- if(businessError)return alert('تعذر التأكد من الأنشطة المرتبطة. لم يتم حذف أي شيء: '+businessError.message);
- const businessNames=(owned||[]).map(b=>b.name).join('، ');
- const warning='حذف حساب صاحب النشاط «'+(profile.display_name||profile.phone||'بدون اسم')+'» نهائيًا.\nلن يتم حذف الأنشطة المرتبطة أو تعديلها. إذا كان للحساب أنشطة أو سجلات مرتبطة، سيرفض النظام الحذف.\n'+((owned||[]).length?'الأنشطة المرتبطة: '+businessNames:'لا توجد أنشطة مرتبطة.')+'\nهل تريد المتابعة؟';
- if(!await janbConfirm(warning,'حذف حساب صاحب النشاط'))return;
- const typed=prompt('للتأكيد النهائي اكتب بالضبط: حذف الحساب');
- if(typed!=='حذف الحساب')return alert('تم إلغاء الحذف؛ لم تتغير أي بيانات.');
+ if(businessError)return alert('تعذر حصر أنشطة الحساب. لم يتم حذف أي بيانات.');
+ const businessNames=(owned||[]).map(b=>b.name).filter(Boolean);
+ const ownerName=profile.display_name||profile.phone||'صاحب النشاط';
+ const warning='أنت على وشك حذف حساب «'+ownerName+'» نهائيًا.\nسيتم حذف كل أنشطته ومنتجاته وخدماته وعروضه وإعلاناته وصوره وفيديوهاته وإيصالات الدفع وسجلاته وبياناته المرتبطة.\nعدد الأنشطة التي سيتم حذفها: '+businessNames.length+(businessNames.length?'\nالأنشطة: '+businessNames.join('، '):'')+'\nلا يمكن التراجع عن هذا الحذف. هل تريد المتابعة؟';
+ if(!await janbConfirm(warning,'تأكيد حذف الحساب'))return;
+ const typed=prompt('للتأكيد النهائي اكتب كلمة: حذف');
+ if(typed!=='حذف')return alert('تم إلغاء العملية. لم يتم حذف أي بيانات.');
  const {data:{session}}=await sb.auth.getSession();
  if(!session?.access_token)return alert('انتهت جلسة المدير. سجّل الدخول من جديد.');
  try{
-  const response=await fetch(SUPABASE_URL+'/functions/v1/admin-delete-owner',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({user_id:userId})});
-  const result=await response.json();
-  if(!response.ok){
-   const linked=Array.isArray(result.linked_records)?result.linked_records.map(x=>x.table+' ('+x.count+')').join('، '):'';
-   return alert((result.error||'تعذر حذف الحساب.')+(linked?'\nالسجلات المرتبطة التي منعت الحذف: '+linked:'')+'\nلم يتم حذف الأنشطة أو السجلات المرتبطة.');
-  }
-  if(!result.success)return alert('لم يؤكد النظام حذف الحساب.');
-  alert('تم حذف حساب صاحب النشاط فقط. لم يتم حذف أي نشاط مرتبط.');
+  const response=await fetch(SUPABASE_URL+'/functions/v1/admin-delete-owner',{
+   method:'POST',
+   headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token},
+   body:JSON.stringify({user_id:userId})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)return alert('تعذر إتمام حذف الحساب بالكامل. لم يتم تأكيد الحذف؛ حاول مرة أخرى.');
+  alert('تم حذف حساب «'+ownerName+'» وكل أنشطته وبياناته وملفاته المرتبطة نهائيًا.');
   await openAdminPage();
- }catch(error){alert('تعذر الاتصال بخدمة حذف الحساب. لم يتم تأكيد الحذف: '+(error.message||'خطأ غير معروف'))}
+  await loadAll();
+ }catch(error){
+  console.error('Owner account deletion request failed:',error);
+  alert('تعذر الاتصال لإتمام الحذف. لم يتم تأكيد حذف الحساب؛ حاول مرة أخرى.');
+ }
 }
 async function adminDeleteBusiness(id){
  const {data:b,error:readError}=await sb.from('businesses').select('id,name').eq('id',id).maybeSingle();
