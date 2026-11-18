@@ -295,6 +295,35 @@ async function recordActivityAnalytics(type,id,eventType){
   if(!response.ok){if(eventType==='view'){try{sessionStorage.removeItem(dedupeKey)}catch(e){}}console.warn('Janb activity analytics failed:',response.status,await response.text())}
  }catch(error){if(eventType==='view'){try{sessionStorage.removeItem(dedupeKey)}catch(e){}}console.warn('Janb activity analytics network error:',error)}
 }
+
+function getJanbVisitorId(){
+ try{
+  let id=localStorage.getItem('janbAnalyticsVisitorId');
+  if(!id){
+   id=window.crypto?.randomUUID?window.crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
+   localStorage.setItem('janbAnalyticsVisitorId',id);
+  }
+  return id;
+ }catch(e){
+  return window.__janbAnalyticsVisitorId||(window.__janbAnalyticsVisitorId='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)}));
+ }
+}
+async function recordJanbAppVisit(){
+ if(window.__janbAppVisitRecorded)return;
+ window.__janbAppVisitRecorded=true;
+ const payload={visitor_id:getJanbVisitorId(),session_id:getJanbAnalyticsSessionId()};
+ try{
+  const response=await fetch(SUPABASE_URL+'/rest/v1/app_visit_events',{
+   method:'POST',
+   headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+   body:JSON.stringify(payload),
+   keepalive:true
+  });
+  if(!response.ok)console.warn('Janb app visit analytics failed:',response.status,await response.text());
+ }catch(error){console.warn('Janb app visit analytics network error:',error)}
+}
+recordJanbAppVisit();
+
 document.addEventListener('click',function(event){
  const link=event.target.closest('a[data-janb-analytics-event]');
  if(link)recordActivityAnalytics(link.dataset.janbAnalyticsType,link.dataset.janbAnalyticsId,link.dataset.janbAnalyticsEvent);
@@ -956,7 +985,41 @@ async function openAdminPage(){
  const adminAnalyticsPanel=document.createElement('section');adminAnalyticsPanel.className='panel';
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><button type="button" id="adminAnalyticsRefresh" class="btn-secondary">تحميل الإحصائيات</button><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminAnalyticsPanel);
- const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
+ 
+const adminVisitorsPanel=document.createElement('section');
+adminVisitorsPanel.className='panel';
+adminVisitorsPanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><button type="button" id="adminVisitorsToggle" class="btn-secondary" style="font-size:16px;font-weight:900;padding:12px 16px">👁️ زوار التطبيق</button><span class="smallnote">اعرف عدد الناس اللي دخلوا جنب بيتك من اللينك أو الأيقونة.</span></div><div id="adminVisitorsBody" hidden style="margin-top:14px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><label for="adminVisitorsRange" class="smallnote">الفترة:</label><select id="adminVisitorsRange" style="max-width:170px"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="90">آخر 90 يومًا</option><option value="all">كل الفترة</option></select><button type="button" id="adminVisitorsRefresh" class="btn-secondary">↻ تحديث</button></div><div id="adminVisitorsSummary" class="form-grid" style="margin-top:12px"><div class="empty">اضغط لعرض إحصائيات الزوار.</div></div><div id="adminVisitorsDaily" style="margin-top:12px"></div><p id="adminVisitorsStatus" class="smallnote" aria-live="polite"></p></div>';
+$('adminContent').prepend(adminVisitorsPanel);
+const loadAdminAppVisitors=async()=>{
+ const range=$('adminVisitorsRange'),summary=$('adminVisitorsSummary'),daily=$('adminVisitorsDaily'),status=$('adminVisitorsStatus'),button=$('adminVisitorsRefresh');
+ if(!range||!summary||!daily||!status)return;
+ if(button){button.disabled=true;button.textContent='جاري التحديث...'}
+ status.textContent='جاري تحميل زيارات التطبيق...';summary.innerHTML='';daily.innerHTML='';
+ try{
+  const {data,error}=await sb.rpc('admin_app_visit_analytics',{p_days:range.value==='all'?null:Number(range.value)});
+  if(error)throw error;
+  const d=Array.isArray(data)?data[0]:data;
+  if(!d||typeof d!=='object')throw new Error('لم تصل بيانات زيارات صالحة.');
+  const fmt=n=>Number(n||0).toLocaleString('ar-EG');
+  summary.innerHTML='<div class="admin-item"><b>'+fmt(d.total_visits)+'</b><p>إجمالي الزيارات في الفترة</p></div><div class="admin-item"><b>'+fmt(d.unique_visitors)+'</b><p>زوار فريدون تقريبًا</p></div><div class="admin-item"><b>'+fmt(d.today_visits)+'</b><p>زيارات اليوم</p></div><div class="admin-item"><b>'+fmt(d.today_unique_visitors)+'</b><p>زوار اليوم تقريبًا</p></div>';
+  const days=Array.isArray(d.daily)?d.daily:[];
+  const max=Math.max(1,...days.map(x=>Number(x.visits||0)));
+  daily.innerHTML='<h3 style="margin:8px 0">الزيارات حسب اليوم</h3>'+(days.length?days.map(x=>'<div class="admin-item" style="margin:7px 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.day||'')+'</b><span>'+fmt(x.visits)+' زيارة · '+fmt(x.unique_visitors)+' زائر</span></div><div style="height:9px;background:#edf1ee;border-radius:20px;overflow:hidden;margin-top:8px"><div style="height:100%;width:'+Math.max(2,Number(x.visits||0)/max*100).toFixed(1)+'%;background:#16834f;border-radius:20px"></div></div></div>').join(''):'<div class="empty">لا توجد زيارات مسجلة في الفترة دي حتى الآن.</div>');
+  status.textContent='آخر زيارة مسجلة: '+(d.last_visit?new Date(d.last_visit).toLocaleString('ar-EG'):'لا توجد زيارات بعد')+'. الأرقام تبدأ من تشغيل ميزة تتبع الزيارات.';
+ }catch(error){
+  summary.innerHTML='<div class="empty">تعذر تحميل زيارات التطبيق: '+esc(error.message||'خطأ غير معروف')+'</div>';
+  status.textContent='تأكد من الدخول بحساب المدير ثم أعد المحاولة.';
+ }finally{if(button){button.disabled=false;button.textContent='↻ تحديث'}}
+};
+$('adminVisitorsToggle').onclick=()=>{
+ const body=$('adminVisitorsBody');
+ body.hidden=!body.hidden;
+ if(!body.hidden)loadAdminAppVisitors();
+};
+$('adminVisitorsRange').onchange=loadAdminAppVisitors;
+$('adminVisitorsRefresh').onclick=loadAdminAppVisitors;
+
+const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
  adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><div id="adminImageManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🖼️ متابعة الصور وحذفها</h3><p class="smallnote">اعرض كل الصور الموجودة في مخزن جنب بيتك واحذف الصور غير المطلوبة نهائيًا لتفريغ المساحة.</p><button type="button" id="adminImageRefresh" class="btn-secondary">عرض الصور وتحديث القائمة</button><div id="adminImageRows" style="margin-top:10px"></div></div><div id="adminPaymentReceiptManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🧾 مراجعة إيصالات الدفع وحذفها</h3><p class="smallnote">اعرض إيصالات التحويل المرفوعة لطلبات الاشتراك، وافتح الإيصال للمراجعة، واحذف الإيصال الذي تختاره فقط. حذف الإيصال لا يحذف طلب الاشتراك ولا يغيّر حالة الدفع.</p><button type="button" id="adminPaymentReceiptRefresh" class="btn-secondary">عرض إيصالات الدفع وتحديث القائمة</button><div id="adminPaymentReceiptRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminStoragePanel);
  const loadAdminStorageDashboard=async()=>{
