@@ -657,7 +657,7 @@ async function handleAuthSubmit(e,mode){
  const prefix=mode==='signup'?'signup':'login',email=$(prefix+'Email').value.trim().toLowerCase(),password=$(prefix+'Password').value,message=$(prefix+'Message'),submit=$(prefix+'Submit'),resend=$(prefix+'ResendBtn');
  if(!email){message.textContent='اكتب بريدك الإلكتروني.';return}
  if(mode==='signup'&&password.length<8){message.textContent='كلمة المرور لازم تكون 8 أحرف على الأقل.';return}
- submit.disabled=true;message.textContent='';if(resend)resend.classList.add('hidden');
+ submit.disabled=true;submit.dataset.janbOriginalText=submit.textContent.trim();submit.innerHTML='<span class="janb-spinner" aria-hidden="true"></span> جاري الانتظار...';message.textContent='جاري إنشاء الحساب والتحقق من البيانات، برجاء الانتظار...';if(resend)resend.classList.add('hidden');
  try{
   const r=mode==='signup'?await sb.auth.signUp({email,password,options:{emailRedirectTo:AUTH_EMAIL_REDIRECT}}):await sb.auth.signInWithPassword({email,password});
   if(r.error)throw r.error;
@@ -665,7 +665,7 @@ async function handleAuthSubmit(e,mode){
   else if(mode==='signup'){message.textContent='تم إنشاء الحساب. افتح Gmail من الزر بالأسفل، وافتح أحدث رسالة تأكيد من جنب بيتك أو Supabase. اضغط تأكيد البريد، وسيعود الرابط إلى جنب بيتك.';const gmailBtn=$('signupOpenGmailBtn');if(gmailBtn)gmailBtn.classList.remove('hidden');if(resend)resend.classList.remove('hidden')}
   else{message.textContent='الحساب غير مؤكد أو بيانات الدخول غير صحيحة. لو لم تؤكد بريدك، افتح Gmail أو أعد إرسال رسالة التأكيد.';if(resend)resend.classList.remove('hidden')}
  }catch(err){const m=String(err.message||err);if(/email not confirmed|email_not_confirmed/i.test(m)){message.textContent='لازم تؤكد بريدك أولًا. افتح Gmail من الزر بالأسفل واضغط رابط التأكيد.';const gmailBtn=$(prefix+'OpenGmailBtn');if(gmailBtn)gmailBtn.classList.remove('hidden');if(resend)resend.classList.remove('hidden')}else{message.textContent=m}}
- finally{submit.disabled=false}
+ finally{submit.disabled=false;if(submit.dataset.janbOriginalText){submit.textContent=submit.dataset.janbOriginalText;delete submit.dataset.janbOriginalText}}
 }
 async function resendConfirmation(mode){
  const prefix=mode==='signup'?'signup':'login',email=$(prefix+'Email').value.trim().toLowerCase(),message=$(prefix+'Message'),btn=$(prefix+'ResendBtn');
