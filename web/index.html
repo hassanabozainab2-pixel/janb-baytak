@@ -1052,7 +1052,6 @@ async function openAdminPage(){
    box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+esc(v.usage.text)+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-video]').forEach(btn=>btn.onclick=async()=>{
     const v=videos[Number(btn.dataset.adminDeleteVideo)];if(!v)return;
-    const warning=v.usage.text||'تعذر تحديد ارتباط الصورة';
     if(!await janbConfirm('تأكيد حذف الفيديو نهائيًا وتحرير مساحته؟\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
@@ -1093,7 +1092,7 @@ async function openAdminPage(){
    box.innerHTML=images.length?images.map((v,i)=>'<div class="admin-item" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+(v.url?'<img src="'+esc(v.url)+'" alt="" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:10px">':'')+'<div style="flex:1;min-width:180px"><b>🖼️ '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+esc(v.usage.text)+'</p></div><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-image="'+i+'">حذف الصورة نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد صور في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-image]').forEach(btn=>btn.onclick=async()=>{
     const v=images[Number(btn.dataset.adminDeleteImage)];if(!v)return;
-    if(v.usage.protected)return showJanbToast('الحذف متوقف لحماية الملف: '+v.usage.text,'error');
+    const warning=v.usage.text||'تعذر تحديد ارتباط الصورة';
     if(!await janbConfirm('قرار حذف نهائي بواسطة المدير. لن يحذف التطبيق أي صورة تلقائيًا.\\n\\nحالة ارتباط الصورة: '+warning+'\\n\\nقد يؤدي الحذف إلى اختفاء الصورة من النشاط أو المنتج أو العرض المرتبط بها.\\n\\nهل تؤكد حذف الملف من التخزين؟\\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
