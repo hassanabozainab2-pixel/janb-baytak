@@ -980,7 +980,7 @@ async function openAdminPage(){
   const add=(row,table,label,isCurrent)=>{
    const biz=row.businesses?.name||row.business_name||row.display_name||row.name||'';
    const names=[row.image_url,row.logo_url,row.cover_url,row.avatar_url,row.media_path,row.storage_path,...(Array.isArray(row.image_urls)?row.image_urls:[])].filter(Boolean);
-   for(const raw of names){const path=String(raw).includes('://')?janbStoragePathFromUrl(raw):String(raw).replace(/^\\/+/, '');if(!path)continue;
+   for(const raw of names){const path=String(raw).includes('://')?janbStoragePathFromUrl(raw):String(raw).replace(/^\/+/, '');if(!path)continue;
     if(!index.has(path))index.set(path,[]);
     index.get(path).push({table,label,biz,isCurrent:!!isCurrent});
    }
