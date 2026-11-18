@@ -23,8 +23,11 @@ class MainActivity : ComponentActivity() {
     private var pendingAuthUri: Uri? = null
     private var webPageReady = false
 
-    private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
+    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uris = if (result.resultCode == RESULT_OK) {
+            WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+        } else null
+        filePathCallback?.onReceiveValue(uris)
         filePathCallback = null
     }
 
@@ -69,8 +72,18 @@ class MainActivity : ComponentActivity() {
             ): Boolean {
                 filePathCallback?.onReceiveValue(null)
                 filePathCallback = callback
-                imagePicker.launch("image/*")
-                return true
+                return try {
+                    val chooserIntent = params?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                    }
+                    filePicker.launch(chooserIntent)
+                    true
+                } catch (_: Exception) {
+                    filePathCallback?.onReceiveValue(null)
+                    filePathCallback = null
+                    false
+                }
             }
         }
 
