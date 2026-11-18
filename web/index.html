@@ -919,7 +919,7 @@ async function openAdminPage(){
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminAnalyticsPanel);
  const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
- adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
+ adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminStoragePanel);
  const loadAdminStorageDashboard=async()=>{
   const metrics=$('adminStorageMetrics'),details=$('adminStorageDetails'),status=$('adminStorageStatus'),refresh=$('adminStorageRefresh');
@@ -953,6 +953,43 @@ async function openAdminPage(){
   }finally{if(refresh){refresh.disabled=false;refresh.textContent='↻ تحديث الآن'}}
  };
  const storageRefreshButton=$('adminStorageRefresh');if(storageRefreshButton)storageRefreshButton.onclick=loadAdminStorageDashboard;
+ const loadAdminVideoFiles=async()=>{
+  const box=$('adminVideoRows'),button=$('adminVideoRefresh');if(!box)return;
+  if(button){button.disabled=true;button.textContent='جاري فحص الفيديوهات...'}
+  box.innerHTML='<div class="empty">جاري البحث داخل مخزن الملفات...</div>';
+  try{
+   const bucket=sb.storage.from('janb-media'),queue=[''],videos=[],seen=new Set();let scanned=0;
+   while(queue.length&&scanned<5000){
+    const folder=queue.shift();if(seen.has(folder))continue;seen.add(folder);
+    const {data,error}=await bucket.list(folder,{limit:1000,sortBy:{column:'name',order:'asc'}});
+    if(error)throw error;
+    for(const item of (data||[])){
+     scanned++;const path=folder?folder+'/'+item.name:item.name;
+     if(item.id===null||item.metadata===null){queue.push(path);continue}
+     const mime=String(item.metadata?.mimetype||item.metadata?.contentType||'').toLowerCase();
+     if(mime.startsWith('video/')||/\.(mp4|webm|mov|3gp|m4v|avi)$/i.test(item.name))videos.push({path,name:item.name,size:Number(item.metadata?.size||0),created:item.created_at||item.updated_at||null});
+    }
+   }
+   if(queue.length)throw new Error('المخزن كبير؛ تم إيقاف الفحص الآمن بعد 5000 عنصر. أعد المحاولة أو راجع النتائج يدويًا.');
+   videos.sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
+   const mb=n=>(n/1048576).toFixed(2)+' ميجابايت';
+   box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
+   box.querySelectorAll('[data-admin-delete-video]').forEach(btn=>btn.onclick=async()=>{
+    const v=videos[Number(btn.dataset.adminDeleteVideo)];if(!v)return;
+    if(!await janbConfirm('تأكيد حذف الفيديو نهائيًا وتحرير مساحته؟\n'+v.name))return;
+    btn.disabled=true;btn.textContent='جاري الحذف...';
+    const {data:removed,error}=await bucket.remove([v.path]);
+    if(error){btn.disabled=false;btn.textContent='حذف الفيديو نهائيًا';return showJanbToast('تعذر حذف الفيديو: '+error.message,'error')}
+    if(!removed?.length){btn.disabled=false;btn.textContent='حذف الفيديو نهائيًا';return showJanbToast('لم يؤكد التخزين حذف الملف. حدّث القائمة وتحقق.','error')}
+    showJanbToast('تم حذف الفيديو من التخزين وتحرير مساحته.');
+    await loadAdminVideoFiles();await loadAdminStorageDashboard();
+   });
+   box.insertAdjacentHTML('afterbegin','<p class="smallnote">عدد الفيديوهات: '+videos.length+' · إجمالي العناصر التي فُحصت: '+scanned+'</p>');
+  }catch(error){box.innerHTML='<div class="empty">تعذر تحميل قائمة الفيديوهات: '+esc(error.message||'خطأ غير معروف')+'</div>'}
+  finally{if(button){button.disabled=false;button.textContent='تحديث قائمة الفيديوهات'}}
+ };
+ const videoRefresh=$('adminVideoRefresh');if(videoRefresh)videoRefresh.onclick=loadAdminVideoFiles;
+
  loadAdminStorageDashboard();
  const loadAdminAnalytics=async()=>{
   const range=$('adminAnalyticsRange'),status=$('adminAnalyticsStatus'),summary=$('adminAnalyticsSummary'),rows=$('adminAnalyticsRows');
