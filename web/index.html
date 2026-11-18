@@ -1148,15 +1148,32 @@ async function adminToggleContent(table,id,isActive){
 }
 async function adminDeleteContent(table,id){
  const allowed=['products','services','offers'];if(!allowed.includes(table))return alert('نوع المحتوى غير مسموح.');
- if(!await janbConfirm('هل أنت متأكد من حذف هذا المنتج أو العرض نهائيًا؟'))return;
+ if(!await janbConfirm('سيتم حذف السجل وملفاته من التخزين نهائيًا. هل تريد المتابعة؟'))return;
+ const {data:row,error:readError}=await sb.from(table).select('*').eq('id',id).maybeSingle();
+ if(readError)return showJanbToast(janbFriendlyError(readError,'تعذر تجهيز الحذف.'),'error');
+ if(!row)return showJanbToast('العنصر غير موجود أو تم حذفه بالفعل.','error');
+ let prefix=null;if(row.business_id){const {data:b,error}=await sb.from('businesses').select('owner_id').eq('id',row.business_id).maybeSingle();if(error)return showJanbToast('تعذر التحقق من ملكية الملفات: '+error.message,'error');if(b?.owner_id)prefix=b.owner_id+'/'+row.business_id+'/'}
+ const paths=janbMediaPathsFromRow(row).filter(path=>prefix&&path.startsWith(prefix));
+ try{await janbRemoveStorageFiles(paths)}catch(error){return showJanbToast('لم يتم حذف السجل لأن حذف ملفاته لم يكتمل: '+(error.message||'خطأ تخزين'),'error')}
  const {error}=await sb.from(table).delete().eq('id',id);
- if(error)return showJanbToast(janbFriendlyError(error,'تعذر الحذف. حاول مرة أخرى.'),'error');
- showJanbToast('تم الحذف بنجاح.');await openAdminPage();await loadAll();
+ if(error)return showJanbToast('تم تنظيف الملفات لكن تعذر حذف سجل قاعدة البيانات: '+janbFriendlyError(error),'error');
+ showJanbToast('تم حذف السجل وملفاته نهائيًا.');await openAdminPage();await loadAll();
 }
 async function reviewAdPayment(id,approve){const {error}=await sb.from('ads').update({payment_status:approve?'approved':'rejected'}).eq('id',id);if(error)return alert('تعذر تحديث الدفع: '+error.message);if(approve){await reviewAd(id,'active');await notifyJanbPublishedContent('ad',id)}else{await sb.from('ads').update({status:'paused',is_active:false}).eq('id',id);alert('تم رفض دفع الإعلان.');await openAdminPage();await loadFeaturedAds()}}
 async function adminSetAdSlot(id,slot){if(!['1','2','3'].includes(String(slot)))return;const {data:occupied,error:checkError}=await sb.from('ads').select('id,title').eq('slot',Number(slot)).eq('status','active').eq('is_active',true).neq('id',id).limit(1);if(checkError)return alert(checkError.message);if(occupied?.length)return alert('المساحة دي مستخدمة بالفعل في إعلان نشط. أوقف الإعلان الحالي أو غيّر مكانه الأول.');const {error}=await sb.from('ads').update({slot:Number(slot)}).eq('id',id);if(error)return alert('تعذر تغيير مساحة الإعلان: '+error.message);alert('تم تغيير مساحة الإعلان.');await openAdminPage();await loadFeaturedAds()}
 async function adminToggleAdActive(id,isActive){if(isActive){const check=await sb.from('ads').select('payment_status').eq('id',id).single();if(check.error)return alert(check.error.message);if(check.data.payment_status!=='approved')return alert('لا يمكن إعادة تفعيل الإعلان قبل اعتماد دفع 200 جنيه.')}const {error}=await sb.from('ads').update({is_active:isActive,status:isActive?'active':'paused'}).eq('id',id);if(error)return alert('تعذر تحديث الإعلان: '+error.message);if(isActive)await notifyJanbPublishedContent('ad',id);alert(isActive?'تم تفعيل الإعلان.':'تم إيقاف الإعلان.');await openAdminPage();await loadFeaturedAds()}
-async function adminDeleteAd(id){if(!await janbConfirm('هل تريد حذف الإعلان نهائيًا؟'))return;const {data,error}=await sb.from('ads').select('media_path').eq('id',id).maybeSingle();if(error)return showJanbToast(janbFriendlyError(error,'تعذر حذف الإعلان. حاول مرة أخرى.'),'error');const del=await sb.from('ads').delete().eq('id',id);if(del.error)return showJanbToast(janbFriendlyError(del.error,'تعذر حذف الإعلان. حاول مرة أخرى.'),'error');if(data?.media_path)await sb.storage.from('janb-media').remove([data.media_path]);showJanbToast('تم حذف الإعلان.');await openAdminPage();await loadFeaturedAds()}
+async function adminDeleteAd(id){
+ if(!await janbConfirm('سيتم حذف الإعلان وملفه من التخزين نهائيًا. هل تريد المتابعة؟'))return;
+ const {data:ad,error:readError}=await sb.from('ads').select('*').eq('id',id).maybeSingle();
+ if(readError)return showJanbToast(janbFriendlyError(readError,'تعذر قراءة الإعلان.'),'error');
+ if(!ad)return showJanbToast('الإعلان غير موجود.','error');
+ const prefix=ad.owner_id?ad.owner_id+'/ads/':null;
+ const paths=janbMediaPathsFromRow(ad).filter(path=>prefix&&path.startsWith(prefix));
+ try{await janbRemoveStorageFiles(paths)}catch(error){return showJanbToast('لم يتم حذف الإعلان لأن حذف ملفه لم يكتمل: '+(error.message||'خطأ تخزين'),'error')}
+ const del=await sb.from('ads').delete().eq('id',id);
+ if(del.error)return showJanbToast('تم تنظيف الملف لكن تعذر حذف سجل الإعلان: '+janbFriendlyError(del.error),'error');
+ showJanbToast('تم حذف الإعلان وملفاته نهائيًا.');await openAdminPage();await loadFeaturedAds();
+}
 function openAdminBusiness(id){showScreen('ownerPage');$('ownerBusinessList').innerHTML='';const title=document.querySelector('#ownerPage .screen-title');if(title)title.textContent='إدارة النشاط';manageBusiness(id)}
 async function toggleAdminCategory(id,isActive){const {error}=await sb.from('categories').update({is_active:isActive}).eq('id',id);if(error)alert('تعذر تحديث القسم: '+error.message);else{await openAdminPage();await loadAll()}}
 async function adminDeleteOwner(userId){
@@ -1186,15 +1203,19 @@ async function adminDeleteOwner(userId){
  }catch(error){alert('تعذر الاتصال بخدمة حذف الحساب. لم يتم تأكيد الحذف: '+(error.message||'خطأ غير معروف'))}
 }
 async function adminDeleteBusiness(id){
- const {data:b,error:readError}=await sb.from('businesses').select('id,name').eq('id',id).maybeSingle();
+ const {data:b,error:readError}=await sb.from('businesses').select('id,name,owner_id,logo_url,cover_url').eq('id',id).maybeSingle();
  if(readError)return showJanbToast(janbFriendlyError(readError,'تعذر قراءة بيانات النشاط. حاول مرة أخرى.'),'error');
  if(!b)return alert('النشاط غير موجود أو تم حذفه بالفعل.');
- if(!await janbConfirm('هل تريد حذف نشاط «'+b.name+'» نهائيًا؟'))return;
+ if(!await janbConfirm('سيتم حذف نشاط «'+b.name+'» وكل منتجاته وخدماته وعروضه وسجلاته المرتبطة وملفاته من التخزين نهائيًا. هل تريد المتابعة؟'))return;
+ let paths=[];try{
+  if(b.owner_id)paths=await janbListBusinessMedia(b.owner_id,id);
+  paths=[...new Set([...paths,...janbMediaPathsFromRow(b).filter(path=>b.owner_id&&path.startsWith(b.owner_id+'/'+id+'/'))])];
+  await janbRemoveStorageFiles(paths);
+ }catch(error){return showJanbToast('لم يتم حذف النشاط لأن تنظيف ملفاته لم يكتمل: '+(error.message||'خطأ تخزين'),'error')}
  const {error}=await sb.from('businesses').delete().eq('id',id);
- if(error)return showJanbToast(janbFriendlyError(error,'تعذر حذف النشاط. قد توجد بيانات مرتبطة به. لم يتم الحذف.'),'error');
- showJanbToast('تم حذف النشاط نهائيًا من قائمة الأنشطة.');
- await openAdminPage();
- await loadAll();
+ if(error)return showJanbToast('تم حذف ملفات النشاط لكن قاعدة البيانات رفضت حذف السجل: '+janbFriendlyError(error),'error');
+ showJanbToast('تم حذف النشاط وكل سجلاته التابعة وملفاته نهائيًا.');
+ await openAdminPage();await loadAll();
 }
 async function reviewBusiness(id,status){const {error}=await sb.from('businesses').update({status,is_active:status==='approved'}).eq('id',id);if(error)alert('تعذر تحديث النشاط: '+error.message);else{alert(status==='approved'?'تم اعتماد نشاط شريك التأسيس.':'تم تحديث حالة النشاط.');await openAdminPage();await loadAll()}}
 async function reviewAd(id,status){if(status==='active'){const check=await sb.from('ads').select('payment_status').eq('id',id).single();if(check.error)return alert(check.error.message);if(check.data.payment_status!=='approved')return alert('لا يمكن تفعيل الإعلان قبل مراجعة وتحقيق مبلغ 200 جنيه.')}const now=new Date(),end=new Date(now.getTime()+7*86400000);const {error}=await sb.from('ads').update({status,is_active:status==='active',starts_at:status==='active'?now.toISOString():null,ends_at:status==='active'?end.toISOString():null}).eq('id',id);if(error)alert('تعذر تحديث الإعلان: '+error.message);else{alert('تم تحديث حالة الإعلان.');await openAdminPage();await loadFeaturedAds()}}
