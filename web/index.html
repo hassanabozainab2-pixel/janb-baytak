@@ -941,7 +941,7 @@ async function openAdminPage(){
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminAnalyticsPanel);
  const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
- adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><div id="adminImageManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🖼️ متابعة الصور وحذفها</h3><p class="smallnote">اعرض كل الصور الموجودة في مخزن جنب بيتك واحذف الصور غير المطلوبة نهائيًا لتفريغ المساحة.</p><button type="button" id="adminImageRefresh" class="btn-secondary">عرض الصور وتحديث القائمة</button><div id="adminImageRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
+ adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><div id="adminImageManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🖼️ متابعة الصور وحذفها</h3><p class="smallnote">اعرض كل الصور الموجودة في مخزن جنب بيتك واحذف الصور غير المطلوبة نهائيًا لتفريغ المساحة.</p><button type="button" id="adminImageRefresh" class="btn-secondary">عرض الصور وتحديث القائمة</button><div id="adminImageRows" style="margin-top:10px"></div></div><div id="adminPaymentReceiptManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🧾 مراجعة إيصالات الدفع وحذفها</h3><p class="smallnote">اعرض إيصالات التحويل المرفوعة لطلبات الاشتراك، وافتح الإيصال للمراجعة، واحذف الإيصال الذي تختاره فقط. حذف الإيصال لا يحذف طلب الاشتراك ولا يغيّر حالة الدفع.</p><button type="button" id="adminPaymentReceiptRefresh" class="btn-secondary">عرض إيصالات الدفع وتحديث القائمة</button><div id="adminPaymentReceiptRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminStoragePanel);
  const loadAdminStorageDashboard=async()=>{
   const metrics=$('adminStorageMetrics'),details=$('adminStorageDetails'),status=$('adminStorageStatus'),refresh=$('adminStorageRefresh');
@@ -1106,10 +1106,47 @@ async function openAdminPage(){
   }catch(error){box.innerHTML='<div class="empty">تعذر تحميل قائمة الصور: '+esc(error.message||'خطأ غير معروف')+'</div>'}
   finally{if(button){button.disabled=false;button.textContent='تحديث قائمة الصور'}}
  };
+
  const imageRefresh=$('adminImageRefresh');if(imageRefresh)imageRefresh.onclick=loadAdminImageFiles;
+ const loadAdminPaymentReceipts=async()=>{
+  const box=$('adminPaymentReceiptRows'),button=$('adminPaymentReceiptRefresh');if(!box)return;
+  if(button){button.disabled=true;button.textContent='جاري تحميل الإيصالات...'}
+  box.innerHTML='<div class="empty">جاري قراءة إيصالات الدفع...</div>';
+  try{
+   const {data:rows,error}=await sb.from('subscription_payment_requests').select('id,business_id,doctor_id,plan_code,amount_egp,transaction_reference,receipt_path,status,created_at,businesses(name),doctors(name,clinic_name)').not('receipt_path','is',null).order('created_at',{ascending:false}).limit(500);
+   if(error)throw error;
+   const receipts=(rows||[]).filter(x=>x.receipt_path),bucket=sb.storage.from('payment-receipts');
+   const planName=p=>({self_managed_yearly:'الإدارة الذاتية السنوية',marketing_agent_yearly:'جنب بيتك وكيلك التسويقي السنوية'}[p]||p||'—');
+   const cards=await Promise.all(receipts.map(async(p)=>{
+    const signed=await bucket.createSignedUrl(p.receipt_path,300);
+    return {p,url:signed.error?'':signed.data?.signedUrl||'',name:p.businesses?.name||p.doctors?.name||p.doctors?.clinic_name||(p.doctor_id?'طبيب':'طلب بدون اسم'),error:signed.error?.message||''};
+   }));
+   box.innerHTML=cards.length?cards.map((x,i)=>'<div class="admin-item" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+(x.url?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener"><img src="'+esc(x.url)+'" alt="إيصال دفع" loading="lazy" style="width:88px;height:88px;object-fit:contain;border:1px solid #e3ebe5;border-radius:10px;background:#f7faf8"></a>':'<div class="empty" style="width:88px;height:88px">تعذر عرض الإيصال</div>')+'<div style="flex:1;min-width:180px"><b>🧾 '+esc(x.name)+'</b><p>'+esc(planName(x.p.plan_code))+' · '+Number(x.p.amount_egp||0).toLocaleString('ar-EG')+' جنيه · '+(x.p.status==='pending'?'بانتظار المراجعة':x.p.status==='approved'?'معتمد':'مرفوض')+'</p><p class="smallnote">رقم العملية: '+esc(x.p.transaction_reference||'غير مسجل')+'<br>المسار: '+esc(x.p.receipt_path)+'</p>'+(x.error?'<p class="smallnote">تعذر إنشاء رابط المعاينة: '+esc(x.error)+'</p>':'')+'</div><div class="rowbtn"><button type="button" class="btn-secondary" data-admin-open-receipt="'+i+'" '+(!x.url?'disabled':'')+'>فتح الإيصال</button><button type="button" class="btn-danger" data-admin-delete-receipt="'+i+'">حذف الإيصال</button></div></div>').join(''):'<div class="empty">لا توجد إيصالات دفع مرتبطة بطلبات الاشتراك حاليًا.</div>';
+   box.querySelectorAll('[data-admin-open-receipt]').forEach(btn=>btn.onclick=()=>{const x=cards[Number(btn.dataset.adminOpenReceipt)];if(x?.url)window.open(x.url,'_blank','noopener')});
+   box.querySelectorAll('[data-admin-delete-receipt]').forEach(btn=>btn.onclick=async()=>{
+    const x=cards[Number(btn.dataset.adminDeleteReceipt)];if(!x)return;
+    if(!await janbConfirm('تأكيد حذف إيصال الدفع نهائيًا؟\\n'+x.name+'\\n\\nسيتم فصل صورة الإيصال عن طلب الاشتراك، ولن يتم حذف الطلب أو تغيير حالة الدفع.'))return;
+    btn.disabled=true;btn.textContent='جاري الحذف...';
+    const detached=await sb.from('subscription_payment_requests').update({receipt_path:null}).eq('id',x.p.id).eq('receipt_path',x.p.receipt_path).select('id').maybeSingle();
+    if(detached.error||!detached.data){btn.disabled=false;btn.textContent='حذف الإيصال';return showJanbToast('لم يتم حذف الإيصال: تعذر تحديث سجل طلب الدفع. '+(detached.error?.message||'ربما تغير السجل.'),'error')}
+    const removed=await bucket.remove([x.p.receipt_path]);
+    if(removed.error||!removed.data?.length){
+     await sb.from('subscription_payment_requests').update({receipt_path:x.p.receipt_path}).eq('id',x.p.id).is('receipt_path',null);
+     btn.disabled=false;btn.textContent='حذف الإيصال';
+     return showJanbToast('تعذر تأكيد حذف ملف الإيصال من التخزين؛ تمت محاولة إعادة ربطه بالطلب. حدّث القائمة وتحقق. '+(removed.error?.message||''),'error');
+    }
+    showJanbToast('تم حذف إيصال الدفع فقط. طلب الاشتراك وحالته كما هما.');
+    await loadAdminPaymentReceipts();await loadAdminStorageDashboard();
+   });
+   box.insertAdjacentHTML('afterbegin','<p class="smallnote">عدد الإيصالات المرتبطة بطلبات الاشتراك: '+cards.length+'</p>');
+  }catch(error){box.innerHTML='<div class="empty">تعذر تحميل إيصالات الدفع: '+esc(error.message||'خطأ غير معروف')+'</div>'}
+  finally{if(button){button.disabled=false;button.textContent='عرض إيصالات الدفع وتحديث القائمة'}}
+ };
+ const paymentReceiptRefresh=$('adminPaymentReceiptRefresh');if(paymentReceiptRefresh)paymentReceiptRefresh.onclick=loadAdminPaymentReceipts;
 
 
  loadAdminStorageDashboard();
+ loadAdminPaymentReceipts();
  const loadAdminAnalytics=async()=>{
   const range=$('adminAnalyticsRange'),status=$('adminAnalyticsStatus'),summary=$('adminAnalyticsSummary'),rows=$('adminAnalyticsRows');
   if(!range||!status||!summary||!rows)return;
