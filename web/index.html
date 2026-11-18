@@ -861,6 +861,42 @@ async function openAdminPage(){
  const adminAnalyticsPanel=document.createElement('section');adminAnalyticsPanel.className='panel';
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminAnalyticsPanel);
+ const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
+ adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
+ $('adminContent').prepend(adminStoragePanel);
+ const loadAdminStorageDashboard=async()=>{
+  const metrics=$('adminStorageMetrics'),details=$('adminStorageDetails'),status=$('adminStorageStatus'),refresh=$('adminStorageRefresh');
+  if(!metrics||!details||!status)return;
+  if(refresh){refresh.disabled=true;refresh.textContent='جاري التحديث...'}
+  status.textContent='جاري قراءة الاستخدام الفعلي من قاعدة البيانات والتخزين...';
+  try{
+   const {data,error}=await sb.rpc('admin_storage_dashboard');
+   if(error)throw error;
+   const d=Array.isArray(data)?data[0]:data;
+   if(!d||typeof d!=='object')throw new Error('لم تصل بيانات قياس صالحة.');
+   const dbUsed=Number(d.database_bytes||0),dbLimit=Number(d.database_limit_bytes||524288000);
+   const storageLimit=Number(d.storage_limit_bytes||1073741824);
+   const buckets=Array.isArray(d.buckets)?d.buckets:[];
+   const storageUsed=buckets.reduce((sum,x)=>sum+Number(x.bytes||0),0);
+   const fileCount=buckets.reduce((sum,x)=>sum+Number(x.files||0),0);
+   const mb=n=>(Number(n)/1048576).toFixed(2)+' ميجابايت';
+   const meter=(label,used,limit,sub)=>{
+    const pct=limit>0?Math.min(100,used/limit*100):0;
+    const color=pct>=85?'#c0392b':pct>=70?'#d98218':'#16834f';
+    const state=pct>=85?'خطر: المساحة قاربت الامتلاء':pct>=70?'تنبيه: راجع المساحة قريبًا':'الوضع مطمئن';
+    return '<div class="admin-item" style="min-width:0"><b>'+label+'</b><div style="font-size:20px;font-weight:900;margin:8px 0">'+mb(used)+' <span class="muted" style="font-size:12px;font-weight:600">من '+mb(limit)+'</span></div><div style="height:11px;background:#edf1ee;border-radius:20px;overflow:hidden"><div role="progressbar" aria-valuenow="'+pct.toFixed(1)+'" aria-valuemin="0" aria-valuemax="100" style="height:100%;width:'+pct.toFixed(1)+'%;background:'+color+';border-radius:20px"></div></div><p style="margin:8px 0 2px;font-weight:800;color:'+color+'">'+pct.toFixed(1)+'% مستخدم · '+state+'</p><p class="smallnote" style="margin:0">المتبقي: '+mb(Math.max(0,limit-used))+' · '+sub+'</p></div>';
+   };
+   metrics.innerHTML=meter('قاعدة البيانات',dbUsed,dbLimit,'حد الخطة المجانية: 500 ميجابايت')+meter('الصور والملفات',storageUsed,storageLimit,'حد التخزين: 1 جيجابايت')+'<div class="admin-item"><b>👥 الحسابات المسجلة</b><div style="font-size:24px;font-weight:900;margin:8px 0">'+Number(d.registered_users||0).toLocaleString('ar-EG')+'</div><p class="smallnote">عدد الحسابات المسجلة حاليًا، وليس عدد المستخدمين النشطين شهريًا.</p></div><div class="admin-item"><b>🎥 الفيديوهات</b><p class="smallnote">لا يوجد مخزن مستقل للفيديوهات حاليًا. أي ملفات موجودة ضمن مخازن الملفات محسوبة داخل إجمالي التخزين أعلاه.</p></div>';
+   details.innerHTML='<h3 style="margin:16px 0 8px">تفصيل مخازن الملفات</h3>'+(buckets.map(x=>'<div class="admin-item"><b>'+esc(x.bucket_id||'مخزن ملفات')+'</b><p>'+mb(x.bytes||0)+' · '+Number(x.files||0).toLocaleString('ar-EG')+' ملف</p></div>').join('')||'<div class="empty">لا توجد ملفات مخزنة حاليًا.</div>')+'<p class="smallnote">إجمالي الملفات: '+fileCount.toLocaleString('ar-EG')+' · آخر قياس: '+(d.measured_at?new Date(d.measured_at).toLocaleString('ar-EG'):'الآن')+'</p>';
+   status.textContent='تم تحديث القياسات بنجاح. اضغط «تحديث الآن» لإعادة القياس في أي وقت.';
+  }catch(error){
+   metrics.innerHTML='<div class="empty">تعذر تحميل قياسات المساحة: '+esc(error.message||'خطأ غير معروف')+'</div>';
+   details.innerHTML='';
+   status.textContent='تأكد من الدخول بحساب المدير ثم أعد المحاولة.';
+  }finally{if(refresh){refresh.disabled=false;refresh.textContent='↻ تحديث الآن'}}
+ };
+ const storageRefreshButton=$('adminStorageRefresh');if(storageRefreshButton)storageRefreshButton.onclick=loadAdminStorageDashboard;
+ loadAdminStorageDashboard();
  const loadAdminAnalytics=async()=>{
   const range=$('adminAnalyticsRange'),status=$('adminAnalyticsStatus'),summary=$('adminAnalyticsSummary'),rows=$('adminAnalyticsRows');
   if(!range||!status||!summary||!rows)return;
@@ -1094,7 +1130,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111822;
+const JANB_CLOUD_VERSION=2026111826;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
