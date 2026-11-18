@@ -1049,7 +1049,7 @@ async function openAdminPage(){
    videos.sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
    const mb=n=>(n/1048576).toFixed(2)+' ميجابايت';
    videos.forEach(v=>v.usage=janbMediaUsageText(usage,v.path));
-   box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+v.usage.text+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
+   box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+esc(v.usage.text)+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-video]').forEach(btn=>btn.onclick=async()=>{
     const v=videos[Number(btn.dataset.adminDeleteVideo)];if(!v)return;
     if(v.usage.protected)return showJanbToast('الحذف متوقف لحماية الملف: '+v.usage.text,'error');
