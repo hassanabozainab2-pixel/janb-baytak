@@ -941,7 +941,7 @@ async function openAdminPage(){
  adminAnalyticsPanel.innerHTML='<h2>إحصائيات كل الأنشطة والأطباء</h2><p class="smallnote">هذه الإحصائيات تظهر للمدير فقط، وكل صاحب نشاط يظل يرى أرقام نشاطه فقط.</p><div class="form-grid"><div class="field"><label>الفترة</label><select id="adminAnalyticsRange"><option value="7">آخر 7 أيام</option><option value="30" selected>آخر 30 يومًا</option><option value="all">كل الفترة</option></select></div></div><div id="adminAnalyticsSummary" class="form-grid"><div>جاري تحميل الإحصائيات...</div></div><div id="adminAnalyticsRows"></div><p id="adminAnalyticsStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminAnalyticsPanel);
  const adminStoragePanel=document.createElement('section');adminStoragePanel.className='panel';
- adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
+ adminStoragePanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📊 مراقبة مساحة جنب بيتك</h2><button type="button" id="adminStorageRefresh" class="btn-secondary">↻ تحديث الآن</button></div><p class="smallnote">مؤشرات خاصة بالمدير فقط. يتم قياس الاستخدام الفعلي عند فتح لوحة الإدارة، والحدود المعروضة تخص الخطة المجانية الحالية.</p><div id="adminStorageMetrics" class="form-grid"><div class="empty">جاري قياس المساحات...</div></div><div id="adminStorageDetails"></div><div id="adminVideoManager" style="margin-top:18px"><h3>🎬 متابعة الفيديوهات وحذفها</h3><p class="smallnote">المدير فقط يقدر يشوف الفيديوهات المخزنة ويحذف الفيديو غير المطلوب من التخزين الفعلي.</p><button type="button" id="adminVideoRefresh" class="btn-secondary">عرض الفيديوهات وتحديث القائمة</button><div id="adminVideoRows" style="margin-top:10px"></div></div><div id="adminImageManager" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border,#ddd)"><h3>🖼️ متابعة الصور وحذفها</h3><p class="smallnote">اعرض كل الصور الموجودة في مخزن جنب بيتك واحذف الصور غير المطلوبة نهائيًا لتفريغ المساحة.</p><button type="button" id="adminImageRefresh" class="btn-secondary">عرض الصور وتحديث القائمة</button><div id="adminImageRows" style="margin-top:10px"></div></div><p id="adminStorageStatus" class="smallnote" aria-live="polite"></p>';
  $('adminContent').prepend(adminStoragePanel);
  const loadAdminStorageDashboard=async()=>{
   const metrics=$('adminStorageMetrics'),details=$('adminStorageDetails'),status=$('adminStorageStatus'),refresh=$('adminStorageRefresh');
@@ -1011,6 +1011,46 @@ async function openAdminPage(){
   finally{if(button){button.disabled=false;button.textContent='تحديث قائمة الفيديوهات'}}
  };
  const videoRefresh=$('adminVideoRefresh');if(videoRefresh)videoRefresh.onclick=loadAdminVideoFiles;
+ const loadAdminImageFiles=async()=>{
+  const box=$('adminImageRows'),button=$('adminImageRefresh');if(!box)return;
+  if(button){button.disabled=true;button.textContent='جاري فحص الصور...'}
+  box.innerHTML='<div class="empty">جاري البحث داخل مخزن الصور...</div>';
+  try{
+   const bucket=sb.storage.from('janb-media'),queue=[''],images=[],seen=new Set();let scanned=0;
+   while(queue.length&&scanned<5000){
+    const folder=queue.shift();if(seen.has(folder))continue;seen.add(folder);
+    const {data,error}=await bucket.list(folder,{limit:1000,sortBy:{column:'name',order:'asc'}});
+    if(error)throw error;
+    for(const item of (data||[])){
+     scanned++;const path=folder?folder+'/'+item.name:item.name;
+     if(item.id===null||item.metadata===null){queue.push(path);continue}
+     const mime=String(item.metadata?.mimetype||item.metadata?.contentType||'').toLowerCase();
+     if(mime.startsWith('image/')||/\.(jpg|jpeg|png|webp|gif|avif|bmp|svg)$/i.test(item.name)){
+      const url=bucket.getPublicUrl(path).data?.publicUrl||'';
+      images.push({path,name:item.name,size:Number(item.metadata?.size||0),created:item.created_at||item.updated_at||null,url});
+     }
+    }
+   }
+   if(queue.length)throw new Error('المخزن كبير؛ تم إيقاف الفحص الآمن بعد 5000 عنصر. أعد المحاولة.');
+   images.sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
+   const mb=n=>(n/1048576).toFixed(2)+' ميجابايت';
+   box.innerHTML=images.length?images.map((v,i)=>'<div class="admin-item" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+(v.url?'<img src="'+esc(v.url)+'" alt="" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:10px">':'')+'<div style="flex:1;min-width:180px"><b>🖼️ '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p></div><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-image="'+i+'">حذف الصورة نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد صور في المخزن.</div>';
+   box.querySelectorAll('[data-admin-delete-image]').forEach(btn=>btn.onclick=async()=>{
+    const v=images[Number(btn.dataset.adminDeleteImage)];if(!v)return;
+    if(!await janbConfirm('تأكيد حذف الصورة نهائيًا وتحرير مساحتها؟\\n'+v.name))return;
+    btn.disabled=true;btn.textContent='جاري الحذف...';
+    const {data:removed,error}=await bucket.remove([v.path]);
+    if(error){btn.disabled=false;btn.textContent='حذف الصورة نهائيًا';return showJanbToast('تعذر حذف الصورة: '+error.message,'error')}
+    if(!removed?.length){btn.disabled=false;btn.textContent='حذف الصورة نهائيًا';return showJanbToast('لم يؤكد التخزين حذف الصورة. حدّث القائمة وتحقق.','error')}
+    showJanbToast('تم حذف الصورة من التخزين وتحرير مساحتها.');
+    await loadAdminImageFiles();await loadAdminStorageDashboard();
+   });
+   box.insertAdjacentHTML('afterbegin','<p class="smallnote">عدد الصور: '+images.length+' · إجمالي العناصر التي فُحصت: '+scanned+'</p>');
+  }catch(error){box.innerHTML='<div class="empty">تعذر تحميل قائمة الصور: '+esc(error.message||'خطأ غير معروف')+'</div>'}
+  finally{if(button){button.disabled=false;button.textContent='تحديث قائمة الصور'}}
+ };
+ const imageRefresh=$('adminImageRefresh');if(imageRefresh)imageRefresh.onclick=loadAdminImageFiles;
+
 
  loadAdminStorageDashboard();
  const loadAdminAnalytics=async()=>{
