@@ -166,6 +166,13 @@ body{padding-bottom:72px}
  <div class="search"><input id="q" placeholder="بتدور على إيه؟ محل، منتج، خدمة..." aria-label="بحث"><button id="searchBtn">بحث</button></div>
 </header>
 <main>
+ <section aria-label="صفحة جنب بيتك على فيسبوك" style="margin:4px 0 18px;padding:0 2px">
+  <a href="https://www.facebook.com/profile.php?id=61596589646468" target="_blank" rel="noopener noreferrer" aria-label="تابع جنب بيتك على فيسبوك" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 15px;background:#fff;border:1px solid #dce7f0;border-radius:15px;text-decoration:none;color:#183b2a;box-shadow:0 4px 13px #163e2510">
+   <span aria-hidden="true" style="display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:50%;background:#1877f2;color:#fff;font-family:Arial,sans-serif;font-size:29px;font-weight:900">f</span>
+   <span style="flex:1;min-width:0"><strong style="display:block;font-size:14px">تابعنا على فيسبوك</strong><small style="display:block;margin-top:3px;color:#6b7771;font-size:11px">صفحة جنب بيتك الرسمية</small></span>
+   <span aria-hidden="true" style="color:#1877f2;font-size:22px;font-weight:900">‹</span>
+  </a>
+ </section>
  <section id="featuredSection"><div class="section-head featured-head"><h2>⭐ إعلانات مميزة</h2></div><div class="muted" style="margin:-5px 2px 11px">مساحات لعرض المحلات والعروض المميزة</div><div id="featuredAds" class="cards"><div class="empty">جاري تحميل الإعلانات...</div></div></section>
  <div class="section-head"><h2>دور على اللي محتاجه</h2><span class="muted">اختار القسم</span></div>
  <div class="categories" id="categories"><div class="empty">جاري تحميل الأقسام...</div></div>
@@ -1088,7 +1095,7 @@ function startJanbCloudSync(){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshCloudData(true)});
 }
 $('refreshAppBtn').onclick=async()=>{$('refreshAppBtn').disabled=true;$('refreshStatus').textContent='جاري التحديث...';try{await refreshCloudData(false)}finally{$('refreshAppBtn').disabled=false}};
-const JANB_CLOUD_VERSION=2026111821;
+const JANB_CLOUD_VERSION=2026111822;
 const JANB_CLOUD_MANIFEST='https://raw.githubusercontent.com/hassanabozainab2-pixel/janb-baytak/main/web/cloud-version.json';
 let janbCloudUpdateBusy=false;
 const JANB_UPDATE_DONE_KEY='janb_update_done_version';
