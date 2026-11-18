@@ -975,12 +975,49 @@ async function openAdminPage(){
   }finally{if(refresh){refresh.disabled=false;refresh.textContent='↻ تحديث الآن'}}
  };
  const storageRefreshButton=$('adminStorageRefresh');if(storageRefreshButton)storageRefreshButton.onclick=loadAdminStorageDashboard;
+ const loadAdminMediaUsageIndex=async()=>{
+  const index=new Map(),now=Date.now();
+  const add=(row,table,label,isCurrent)=>{
+   const biz=row.businesses?.name||row.business_name||'نشاط غير معروف';
+   const names=[row.image_url,row.logo_url,row.cover_url,row.media_path,row.storage_path,...(Array.isArray(row.image_urls)?row.image_urls:[])].filter(Boolean);
+   for(const raw of names){const path=String(raw).includes('://')?janbStoragePathFromUrl(raw):String(raw).replace(/^\/+/, '');if(!path)continue;
+    if(!index.has(path))index.set(path,[]);
+    index.get(path).push({table,label,biz,isCurrent:!!isCurrent});
+   }
+  };
+  const specs=[
+   ['businesses','id,name,logo_url,cover_url,status,is_active','صورة/غلاف النشاط',r=>r.status==='approved'&&r.is_active!==false],
+   ['products','*','صورة منتج',r=>r.is_active!==false],
+   ['services','*','صورة خدمة',r=>r.is_active!==false],
+   ['offers','*','وسائط عرض',r=>r.is_active!==false&&(!r.starts_at||new Date(r.starts_at).getTime()<=now)&&(!r.ends_at||new Date(r.ends_at).getTime()>=now)],
+   ['ads','*','وسائط إعلان مميز',r=>r.status==='active'&&r.is_active===true],
+   ['business_images','*','صورة إضافية للنشاط',r=>r.is_active!==false]
+  ];
+  const results=await Promise.all(specs.map(async([table,fields])=>({table,...await sb.from(table).select(fields)})));
+  const businessNames=new Map((results.find(x=>x.table==='businesses')?.data||[]).map(b=>[String(b.id),b.name||'نشاط بدون اسم']));
+  for(const result of results){
+   if(result.error){console.warn('Media usage scan skipped '+result.table,result.error);continue}
+   for(const row of result.data||[]){
+    const biz=businessNames.get(String(row.business_id))||businessNames.get(String(row.id))||row.businesses?.name||'';
+    const copy={...row,businesses:{name:biz}};
+    const spec=specs.find(x=>x[0]===result.table);
+    add(copy,result.table,spec[2],spec[3](row));
+   }
+  }
+  return index;
+ };
+ const janbMediaUsageText=(index,path)=>{
+  const refs=index.get(path)||[];
+  if(!refs.length)return {text:'⚪ غير مرتبط بسجل معروف — راجعه قبل الحذف',current:false};
+  const unique=[...new Map(refs.map(x=>[x.table+'|'+x.label+'|'+x.biz,x])).values()];
+  return {text:unique.map(x=>(x.isCurrent?'🟢 مستخدم حاليًا':'🟡 مرتبط بسجل')+' · '+x.label+(x.biz?' · '+x.biz:'')).join('<br>'),current:unique.some(x=>x.isCurrent)};
+ };
  const loadAdminVideoFiles=async()=>{
   const box=$('adminVideoRows'),button=$('adminVideoRefresh');if(!box)return;
   if(button){button.disabled=true;button.textContent='جاري فحص الفيديوهات...'}
   box.innerHTML='<div class="empty">جاري البحث داخل مخزن الملفات...</div>';
   try{
-   const bucket=sb.storage.from('janb-media'),queue=[''],videos=[],seen=new Set();let scanned=0;
+   const bucket=sb.storage.from('janb-media'),queue=[''],videos=[],seen=new Set();let scanned=0;const usage=await loadAdminMediaUsageIndex();
    while(queue.length&&scanned<5000){
     const folder=queue.shift();if(seen.has(folder))continue;seen.add(folder);
     const {data,error}=await bucket.list(folder,{limit:1000,sortBy:{column:'name',order:'asc'}});
@@ -995,9 +1032,11 @@ async function openAdminPage(){
    if(queue.length)throw new Error('المخزن كبير؛ تم إيقاف الفحص الآمن بعد 5000 عنصر. أعد المحاولة أو راجع النتائج يدويًا.');
    videos.sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
    const mb=n=>(n/1048576).toFixed(2)+' ميجابايت';
-   box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
+   videos.forEach(v=>v.usage=janbMediaUsageText(usage,v.path));
+   box.innerHTML=videos.length?videos.map((v,i)=>'<div class="admin-item"><b>🎥 '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+v.usage.text+'</p><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-video="'+i+'">حذف الفيديو نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد فيديوهات في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-video]').forEach(btn=>btn.onclick=async()=>{
     const v=videos[Number(btn.dataset.adminDeleteVideo)];if(!v)return;
+    if(v.usage.current)return showJanbToast('لا يمكن حذف هذا الفيديو لأنه مستخدم حاليًا. أزل استخدامه من العرض/الإعلان أولًا.','error');
     if(!await janbConfirm('تأكيد حذف الفيديو نهائيًا وتحرير مساحته؟\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
@@ -1016,7 +1055,7 @@ async function openAdminPage(){
   if(button){button.disabled=true;button.textContent='جاري فحص الصور...'}
   box.innerHTML='<div class="empty">جاري البحث داخل مخزن الصور...</div>';
   try{
-   const bucket=sb.storage.from('janb-media'),queue=[''],images=[],seen=new Set();let scanned=0;
+   const bucket=sb.storage.from('janb-media'),queue=[''],images=[],seen=new Set();let scanned=0;const usage=await loadAdminMediaUsageIndex();
    while(queue.length&&scanned<5000){
     const folder=queue.shift();if(seen.has(folder))continue;seen.add(folder);
     const {data,error}=await bucket.list(folder,{limit:1000,sortBy:{column:'name',order:'asc'}});
@@ -1034,9 +1073,11 @@ async function openAdminPage(){
    if(queue.length)throw new Error('المخزن كبير؛ تم إيقاف الفحص الآمن بعد 5000 عنصر. أعد المحاولة.');
    images.sort((a,b)=>String(b.created||'').localeCompare(String(a.created||'')));
    const mb=n=>(n/1048576).toFixed(2)+' ميجابايت';
-   box.innerHTML=images.length?images.map((v,i)=>'<div class="admin-item" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+(v.url?'<img src="'+esc(v.url)+'" alt="" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:10px">':'')+'<div style="flex:1;min-width:180px"><b>🖼️ '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p></div><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-image="'+i+'">حذف الصورة نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد صور في المخزن.</div>';
+   images.forEach(v=>v.usage=janbMediaUsageText(usage,v.path));
+   box.innerHTML=images.length?images.map((v,i)=>'<div class="admin-item" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+(v.url?'<img src="'+esc(v.url)+'" alt="" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:10px">':'')+'<div style="flex:1;min-width:180px"><b>🖼️ '+esc(v.name)+'</b><p>'+esc(v.path)+'<br>'+mb(v.size)+(v.created?' · '+new Date(v.created).toLocaleString('ar-EG'):'')+'</p><p class="smallnote">'+v.usage.text+'</p></div><div class="rowbtn"><button type="button" class="btn-danger" data-admin-delete-image="'+i+'">حذف الصورة نهائيًا</button></div></div>').join(''):'<div class="empty">لا توجد صور في المخزن.</div>';
    box.querySelectorAll('[data-admin-delete-image]').forEach(btn=>btn.onclick=async()=>{
     const v=images[Number(btn.dataset.adminDeleteImage)];if(!v)return;
+    if(v.usage.current)return showJanbToast('لا يمكن حذف هذه الصورة لأنها مستخدمة حاليًا. أزل استخدامها من السجل أولًا.','error');
     if(!await janbConfirm('تأكيد حذف الصورة نهائيًا وتحرير مساحتها؟\\n'+v.name))return;
     btn.disabled=true;btn.textContent='جاري الحذف...';
     const {data:removed,error}=await bucket.remove([v.path]);
