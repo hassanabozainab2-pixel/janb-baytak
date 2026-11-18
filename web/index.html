@@ -180,8 +180,8 @@ body{padding-bottom:72px}
  <div class="cards home-section-content" id="latestBusinesses" hidden><div class="empty">جاري تحميل الأنشطة...</div></div>
  <div class="section-head home-section-head"><button class="home-section-toggle" type="button" onclick="toggleHomeSection('latestProducts',this)" aria-expanded="false"><span>أحدث المنتجات</span><span class="section-chevron">⌄</span></button><span class="muted">من المحلات المسجلة</span></div>
  <div class="home-section-content" id="latestProducts" hidden><div class="empty">جاري تحميل المنتجات...</div></div>
- <div class="section-head home-section-head"><button class="home-section-toggle" type="button" onclick="toggleHomeSection('latestOffers',this)" aria-expanded="false"><span>أحدث العروض</span><span class="section-chevron">⌄</span></button><span class="muted">العروض المنشورة من الأنشطة</span></div>
- <div class="home-section-content" id="latestOffers" hidden><div class="empty">جاري تحميل العروض...</div></div>
+ <div class="section-head home-section-head"><button class="home-section-toggle" type="button" onclick="toggleHomeSection('latestOffers',this)" aria-expanded="true"><span>أحدث العروض</span><span class="section-chevron">⌄</span></button><span class="muted">العروض المنشورة من الأنشطة</span></div>
+ <div class="home-section-content" id="latestOffers"><div class="empty">جاري تحميل العروض...</div></div>
 </main>
 <button id="bottomCartButton" class="bottom-cart-btn" type="button" onclick="showCart()">🛒 السلة <span id="bottomCartCount">0</span></button>
 
@@ -411,9 +411,30 @@ function renderHome(){
  $('categories').innerHTML=roots.map(c=>'<button class="cat" data-slug="'+esc(c.slug)+'">'+categoryPhotoMarkup(c)+'<span>'+esc(c.name)+'</span></button>').join('');
  $('latestBusinesses').innerHTML=businesses.length?businesses.slice(0,8).map(businessCard).join(''):'<div class="empty">لسه مفيش أنشطة منشورة في الأقسام. أضف نشاطك وابدأ.</div>';
  $('latestProducts').innerHTML=products.length?products.slice(0,6).map(p=>productRow(p,true)).join(''):'<div class="empty">المنتجات هتظهر هنا بعد ما أصحاب المحلات يضيفوها.</div>';
- $('latestOffers').innerHTML=offers.length?offers.slice(0,12).map(renderOfferCard).join(''):'<div class="empty">مفيش عروض منشورة حاليًا.</div>';
+ renderLatestOffers();
 }
 function renderOfferCard(o){const b=o.businesses||businesses.find(x=>x.id===o.business_id)||{};return '<article class="offer-card" role="button" tabindex="0" onclick="openOffer(\''+o.id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openOffer(\''+o.id+'\')}" style="cursor:pointer"><img class="offer-photo" src="'+esc(o.image_url||'')+'" alt="'+esc(o.title)+'" onerror="this.style.display=\'none\'"><div class="offer-info"><span class="offer-tag">عرض خاص'+(o.discount_percent?' · خصم '+esc(o.discount_percent)+'%':'')+'</span><h3>'+esc(o.title)+'</h3><p>'+esc(o.description||'')+'</p><div class="offer-shop">🏪 '+esc(b.name||'')+'</div>'+(o.price_after!=null?'<div class="offer-prices"><del>'+(o.price_before!=null?money(o.price_before)+' جنيه':'')+'</del><b>'+money(o.price_after)+' جنيه</b></div>':'')+'<div style="display:flex;gap:7px;flex-wrap:wrap"><button class="offer-order-btn" onclick="event.stopPropagation();openOffer(\''+o.id+'\')">التفاصيل والطلب</button><button class="btn-secondary" onclick="event.stopPropagation();requestOffer(\''+o.id+'\')">أضف للسلة</button></div></div></article>'}
+function renderLatestOffers(){const box=$('latestOffers');if(!box)return;box.innerHTML=offers.length?offers.slice(0,12).map(renderOfferCard).join(''):'<div class="empty">مفيش عروض منشورة حاليًا.</div>';}
+let janbOffersBusy=false,janbOffersQueued=false,janbOffersTimer=null;
+async function refreshLatestOffers(){
+ if(janbOffersBusy){janbOffersQueued=true;return;}
+ janbOffersBusy=true;
+ try{
+  const {data,error}=await janbWaitFor(sb.from('offers').select('id,business_id,title,description,discount_percent,starts_at,ends_at,image_url,product_id,price_before,price_after,businesses(name,phone,whatsapp)').eq('is_active',true).order('created_at',{ascending:false}),'العروض',12000);
+  if(error)throw error;
+  const visibleBusinessIds=new Set(businesses.map(b=>b.id));
+  offers=(data||[]).filter(o=>visibleBusinessIds.has(o.business_id));
+  renderLatestOffers();
+ }catch(error){console.warn('Janb latest offers refresh failed:',error);}
+ finally{
+  janbOffersBusy=false;
+  if(janbOffersQueued){janbOffersQueued=false;scheduleJanbOffersRefresh();}
+ }
+}
+function scheduleJanbOffersRefresh(){
+ if(janbOffersTimer)clearTimeout(janbOffersTimer);
+ janbOffersTimer=setTimeout(()=>{janbOffersTimer=null;refreshLatestOffers();},350);
+}
 function toggleHomeSection(id,button){const box=$(id);if(!box||!button)return;const opening=box.hidden;box.hidden=!opening;button.setAttribute('aria-expanded',opening?'true':'false');}
 
 function fillCategorySelect(){const sel=$('businessCategory');if(!sel)return;const leaves=categories.filter(c=>c.parent_id);sel.innerHTML=leaves.map(c=>'<option value="'+c.id+'">'+esc((categories.find(p=>p.id===c.parent_id)?.name||'')+' — '+c.name)+'</option>').join('')}
@@ -1112,7 +1133,7 @@ function startJanbCloudSync(){
     .on('postgres_changes',{event:'*',schema:'public',table:'businesses'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'products'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'services'},scheduleJanbCloudRefresh)
-    .on('postgres_changes',{event:'*',schema:'public',table:'offers'},scheduleJanbCloudRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'offers'},scheduleJanbOffersRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'ads'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'business_images'},scheduleJanbCloudRefresh)
     .on('postgres_changes',{event:'*',schema:'public',table:'product_image_library'},scheduleJanbCloudRefresh)
