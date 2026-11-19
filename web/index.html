@@ -1672,6 +1672,7 @@ startJanbCloudSync();refreshCloudData(true);refreshAuth().catch(e=>{console.erro
       if(data.session){
         if(typeof currentUser!=='undefined')currentUser=data.session.user;
         if(typeof refreshAuth==='function')await refreshAuth();
+        if(typeof janbContinuePendingBusinessRegistration==='function')janbContinuePendingBusinessRegistration();
         history.replaceState({},'',location.pathname);
         message.textContent='تم تأكيد البريد الإلكتروني بنجاح. حسابك جاهز، يمكنك الرجوع إلى جنب بيتك.';
         button.textContent='فتح التطبيق';
