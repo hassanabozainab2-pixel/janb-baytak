@@ -778,7 +778,7 @@ async function refreshAuth(){const {data}=await sb.auth.getSession();currentUser
 sb.auth.onAuthStateChange(()=>setTimeout(refreshAuth,0));$('logoutBtn').onclick=async()=>{try{if(currentUser&&window.JanbNativePush){const token=JanbNativePush.getFcmToken();if(token)await sb.from('device_push_tokens').delete().eq('user_id',currentUser.id).eq('fcm_token',token)}}catch(error){console.warn('Could not unregister push device:',error)}await sb.auth.signOut();await refreshAuth();$('accountDropdown').classList.add('hidden')};
 
 $('addBtn').onclick=()=>{if(!currentUser){try{sessionStorage.setItem('janb_pending_business_registration','1')}catch(e){}openModal('loginModal');$('loginMessage').textContent='سجّل الدخول أو أنشئ حسابًا جديدًا عشان تكمل إضافة نشاطك.';return}openModal('addChoiceModal')};
-$('addBusinessChoice').onclick=()=>{closeModal('addChoiceModal');openModal('businessModal')};
+$('addBusinessChoice').onclick=()=>{$('addChoiceModal').classList.remove('show');openModal('businessModal')};
 async function openDoctorRegistration(){const sel=$('doctorRegisterSpecialty');sel.innerHTML='<option value="">جاري تحميل التخصصات...</option>';openModal('doctorRegisterModal');const {data,error}=await sb.from('doctor_specialties').select('id,name').eq('is_active',true).order('sort_order');if(error){sel.innerHTML='<option value="">تعذر تحميل التخصصات</option>';return}sel.innerHTML='<option value="">اختر التخصص</option>'+(data||[]).map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');$('doctorRegisterStatus').textContent='';}
 $('doctorRegisterForm').onsubmit=async e=>{
  e.preventDefault();
@@ -793,7 +793,7 @@ $('doctorRegisterForm').onsubmit=async e=>{
   status.textContent='تم إرسال بياناتك مجانًا بنجاح. طلبك الآن بانتظار مراجعة الإدارة واعتماد الملف الطبي.';form.reset();
  }catch(error){status.textContent='تعذر إرسال البيانات: '+(error.message||'حاول مرة أخرى')}
  finally{btn.disabled=false}
-};$('addDoctorChoice').onclick=async()=>{closeModal('addChoiceModal');await openDoctorRegistration();};
+};$('addDoctorChoice').onclick=async()=>{$('addChoiceModal').classList.remove('show');await openDoctorRegistration();};
 $('businessForm').onsubmit=async e=>{
  e.preventDefault();
  if(!currentUser){openModal('loginModal');$('loginMessage').textContent='سجّل الدخول الأول لإضافة نشاطك.';return}
